@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model SystemAdmin{
+  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email String  @unique
+  name  String?
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email String  @unique
+  name  String?
+  books UserBooks[]
+  createdAt DateTime @default(now())
+}
+
+model UserBooks {
+  id  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  loan_date DateTime
+  return_date DateTime?
+  status  LoanStatus @default(LOANED)
+  user  User    @relation(fields: [user_id], references: [id])
+  user_id String @db.Uuid
+  book Books  @relation(fields: [book_id], references: [id])
+  book_id String @db.Uuid
+}
+
+model Books {
+  id  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title String
+  author  String?
+  amount Int
+  users UserBooks[]
+  createdAt DateTime @default(now())
+}
+
+enum LoanStatus {
+  LOANED
+  RETURNED
+}
