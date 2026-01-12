@@ -33,3 +33,5 @@ O objetivo deste projeto é aplicar **boas práticas de desenvolvimento**, com f
 * Controle de permissões e autenticação
 
 ## 📌 Status do Projeto
+
+* Em Andamento

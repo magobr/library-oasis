@@ -1,20 +1,28 @@
-import { Injectable } from '@nestjs/common';
-import { DataBaseService } from 'src/database/database.service';
+import { HttpException, Injectable } from '@nestjs/common';
+import { UUID } from 'crypto';
+import { DataBaseService } from '../database/database.service';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private databaseService: DataBaseService){}
+  constructor(private readonly databaseService: DataBaseService){}
 
-  async getHello() {
+  async find(id: UUID): Promise<UserDto> {
     try {
-      return await this.databaseService.user.findUnique({
+      const search_user = await this.databaseService.user.findUnique({
         where: {
-          id: "ae968487-ff2b-4649-be2e-f58b0860df0c",
+          id: id,
         },
       });
+
+      if (typeof search_user !== 'object' || search_user === null) {
+        throw new HttpException('User not found', 404);
+      } 
+      
+      return search_user;
+      
     } catch(e) {
       return e
-    }
-    
+    } 
   }
 }
