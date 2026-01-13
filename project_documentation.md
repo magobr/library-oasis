@@ -18,3 +18,10 @@
 - Identificadores randomicos (UUID v4) para todas as tabelas
 - DTO's para normativa de dados e validacoes
 - Testes integrados
+
+---
+
+### Relatório de Desenvolvimento
+
+**Módulo de usuário**
+- Responsavel por criar, alterar e deletar usuário, desenvolvido com testes e código sustentável
