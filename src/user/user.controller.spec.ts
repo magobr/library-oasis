@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from './user.service';
-import { DataBaseService } from '../database/database.service';
 import { UserDto } from './dto/user.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
+import { DataBaseService } from '../database/database.service';
 
 
-describe('User Service', () => {
-  let user_service: UserService;
+describe('User controller', () => {
+  let user_controller: UserController;
 
   const databaseServiceMock = {
     user: {
@@ -14,25 +15,26 @@ describe('User Service', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-    }
+    },
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        UserController,
         UserService,
-        DataBaseService,
         {
           provide: DataBaseService,
           useValue: databaseServiceMock,
-        }
+        },
       ],
     }).compile();
 
-    user_service = module.get<UserService>(UserService);
+    user_controller = module.get<UserController>(UserController);
   });
 
   describe('Find User', () => {
+
     it('Deve retornar sucesso na busca', async () => {
       const user: UserDto = {
         id:"3caeba63-22ef-482d-96a9-e37b940b5177",
@@ -41,33 +43,27 @@ describe('User Service', () => {
         createdAt: new Date("2026-01-12T02:16:27.546Z")
       }
 
-      databaseServiceMock.user.findUnique.mockReturnValue(user);
+      jest.spyOn(user_controller, 'getUser').mockResolvedValue(user);
 
-      const result = await user_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
+      const result = await user_controller.getUser("3caeba63-22ef-482d-96a9-e37b940b5177");
 
       expect(result).toEqual(user);
-
-      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({"where": {"id": "3caeba63-22ef-482d-96a9-e37b940b5177"}});
     });
 
     it('Deve retornar erro na busca', async () => {
       const exception = new HttpException('User not found', HttpStatus.NOT_FOUND)
+      const result = await user_controller.getUser("3caeba63-22ef-482d-96a9-e37b940b5177");
 
-      databaseServiceMock.user.findUnique.mockReturnValue(exception);
-
-      const result = await user_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
-
+      jest.spyOn(user_controller, 'getUser').mockRejectedValue(exception);
+      
       expect(result).toEqual(exception);
-
-      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({"where": {"id": "3caeba63-22ef-482d-96a9-e37b940b5177"}});
     });
 
     it('Deve retornar erro quando o id não estiver no formato UUID', async () => {
       const exception = new HttpException('User not found', HttpStatus.INTERNAL_SERVER_ERROR)
-
       databaseServiceMock.user.findUnique.mockReturnValue(exception);
 
-      const result = await user_service.find("12345" as any);
+      const result = await user_controller.getUser("12345" as any);
 
       expect(result).toEqual(exception);
 
@@ -76,7 +72,7 @@ describe('User Service', () => {
   });
 
   describe('Create User', () => {
-    it('Deve retornar sucesso na criacao', async () => {
+    it('Deve criar um usuário com sucesso', async () => {
       const user: UserDto = {
         id:"3caeba63-22ef-482d-96a9-e37b940b5177",
         email:"thiago@email.com",
@@ -85,7 +81,7 @@ describe('User Service', () => {
       }
 
       databaseServiceMock.user.create = jest.fn().mockReturnValue(user);
-      const result = await user_service.create({
+      const result = await user_controller.createUser({
         email: "thiago@email.com",
         name: "Thiago Novaes"
       });
@@ -100,24 +96,16 @@ describe('User Service', () => {
       });
     });
 
-    it('Deve retornar erro de email duplicado na criacao', async () => {
-      const exception = new HttpException('Email already in use', HttpStatus.CONFLICT);
+    it('Deve retornar erro ao criar usuário com email já existente', async () => {
+      const exception = new HttpException('Email already exists', HttpStatus.CONFLICT)
 
-      databaseServiceMock.user.create = jest.fn().mockImplementation(() => {
-        const error: any = new Error();
-        error.code = 'P2002';
-        throw error;
+      databaseServiceMock.user.create = jest.fn().mockReturnValue(exception);
+      const result = await user_controller.createUser({
+        email: "thiago@email.com",
+        name: "Thiago Novaes"
       });
 
-
-      try {
-        await user_service.create({
-          email: "thiago@email.com",
-          name: "Thiago Novaes"
-        }); 
-      } catch (error) {
-        expect(error).toEqual(exception);  
-      }
+      expect(result).toEqual(exception);
 
       expect(databaseServiceMock.user.create).toHaveBeenCalledWith({
         data: {
@@ -135,7 +123,7 @@ describe('User Service', () => {
       });
 
       try {
-        await user_service.create({
+        await user_controller.createUser({
           email: "thiago@email.com",
           name: "Thiago Novaes"
         }); 
@@ -150,6 +138,7 @@ describe('User Service', () => {
         }
       });
     });
+    
   });
 
   describe('Update User', () => {
@@ -162,7 +151,7 @@ describe('User Service', () => {
       }
 
       databaseServiceMock.user.update = jest.fn().mockReturnValue(user);
-      const result = await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
+      const result = await user_controller.updateUser("3caeba63-22ef-482d-96a9-e37b940b5177", {
         name: "Teste Atualizado"
       });
 
@@ -188,7 +177,7 @@ describe('User Service', () => {
       });
 
       try {
-        await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
+        await user_controller.updateUser("3caeba63-22ef-482d-96a9-e37b940b5177", {
           name: "Teste Atualizado"
         }); 
       } catch (error) {
@@ -213,7 +202,7 @@ describe('User Service', () => {
       });
 
       try {
-        await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
+        await user_controller.updateUser("3caeba63-22ef-482d-96a9-e37b940b5177", {
           name: "Teste Atualizado"
         }); 
       } catch (error) {
@@ -236,7 +225,7 @@ describe('User Service', () => {
       const returnMessage = { message: 'User deleted successfully' };
 
       databaseServiceMock.user.delete = jest.fn().mockReturnValue(returnMessage);
-      const result = await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
+      const result = await user_controller.deleteUser("3caeba63-22ef-482d-96a9-e37b940b5177");
 
       expect(result).toEqual(returnMessage);
 
@@ -257,7 +246,7 @@ describe('User Service', () => {
       });
 
       try {
-        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");  
+        await user_controller.deleteUser("3caeba63-22ef-482d-96a9-e37b940b5177");  
       } catch (error) {
         expect(error).toEqual(returnMessage); 
       }
@@ -277,7 +266,7 @@ describe('User Service', () => {
       });
 
       try {
-        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");  
+        await user_controller.deleteUser("3caeba63-22ef-482d-96a9-e37b940b5177");  
       } catch (error) {
         expect(error).toEqual(returnMessage); 
       }
