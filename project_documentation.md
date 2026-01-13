@@ -12,3 +12,9 @@
 3. Estrutura de requisitos
 
 4. Performance
+
+### Observações
+
+- Identificadores randomicos (UUID v4) para todas as tabelas
+- DTO's para normativa de dados e validacoes
+- Testes integrados
