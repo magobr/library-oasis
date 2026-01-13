@@ -6,9 +6,13 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 
 @Module({
-  imports: [UsersModule,  ConfigModule.forRoot({
-    isGlobal: true,
-  }), AdminModule],
+  imports: [
+    UsersModule,
+    AdminModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

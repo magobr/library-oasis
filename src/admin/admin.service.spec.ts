@@ -3,6 +3,7 @@ import { AdminService } from './admin.service';
 import { DataBaseService } from '../database/database.service';
 import { AdminDto } from './dto/admin.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 describe('User Service', () => {
     let admin_service: AdminService;
@@ -56,5 +57,35 @@ describe('User Service', () => {
             const result = await admin_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
             expect(result).toEqual(exception);
         });
+    });
+
+    describe('Create Admin', () => {
+        it('Deve retornar sucesso na criacao de admin', async () => {
+            const new_admin: CreateAdminDto = {
+                email:"teste@email.com",
+                name:"Teste",
+                password:"password123",
+            };
+
+            const response_admin: AdminDto = {
+                id:"3caeba63-22ef-482d-96a9-e37b940b5177",
+                email:"teste@email.com",
+                name:"Teste",
+                createdAt: new Date(),
+            };
+
+            databaseServiceMock.systemAdmin.create = jest.fn().mockReturnValue(response_admin);
+
+            const result = await admin_service.create(new_admin);
+
+            expect(result).toEqual(response_admin);
+            expect(databaseServiceMock.systemAdmin.create).toHaveBeenCalledWith({
+                data: {
+                    email: new_admin.email,
+                    name: new_admin.name,
+                    password: expect.any(String),
+                }
+            });
+        })
     });
 });
