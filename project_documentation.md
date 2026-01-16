@@ -25,3 +25,4 @@
 
 **Módulo de usuário**
 - Responsavel por criar, alterar e deletar usuário, desenvolvido com testes e código sustentável
+- Terá uma dependencia de token de authenticacao de SystemAdmin

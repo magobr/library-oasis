@@ -84,18 +84,23 @@ export class AdminService {
           email: admin.email,
           name: admin.name
         },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true
+        }
       });
 
-      return {
-        id: updated_admin.id,
-        email: updated_admin.email,
-        name: updated_admin.name,
-        createdAt: updated_admin.createdAt,
-      };
+      return updated_admin;
     } catch (e) {
 
       if(e.code === 'P2025') {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      if(e.code === 'P2002') {
+        throw new HttpException('Email already in use', HttpStatus.CONFLICT);
       }
 
       return e;
@@ -122,6 +127,7 @@ export class AdminService {
     try {
       const admin = await this.databaseService.systemAdmin.findFirst({
         where: { email: email },
+        select: { id: true, email: true, name: true, password: true }
       });
 
       if (!admin) {
