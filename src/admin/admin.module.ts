@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DataBaseModule } from 'src/database/database.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { AdminGuard } from './admin.guard';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { AdminService } from './admin.service';
       signOptions: { expiresIn: '7d' },
     }),
   ],
+  exports: [AdminGuard],
   controllers: [AdminController],
-  providers: [AdminService, DataBaseModule],
+  providers: [AdminService, DataBaseModule, AdminGuard],
 })
 export class AdminModule {}
