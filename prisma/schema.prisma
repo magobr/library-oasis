@@ -12,6 +12,25 @@ model SystemAdmin{
   name  String
   password String
   createdAt DateTime @default(now())
+  roles Roles[]
+}
+
+model Roles {
+  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type_id String @db.Uuid
+  roleType RoleTypes @relation(fields: [type_id], references: [id])
+  admin_id String @db.Uuid
+  admin SystemAdmin @relation(fields: [admin_id], references: [id])
+}
+
+model RoleTypes {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type   UserRole @default(USER)
+  create Boolean @default(false)
+  read   Boolean @default(false)
+  update Boolean @default(false)
+  delete Boolean @default(false)
+  roles Roles[]
 }
 
 model User {
@@ -45,4 +64,9 @@ model Books {
 enum LoanStatus {
   LOANED
   RETURNED
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }

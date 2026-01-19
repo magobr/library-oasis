@@ -26,12 +26,31 @@
 ### Módulo de Admin
 
 - [x] Testes de integração
-- [ ] Guard responsavel pela dependencia do token\
+- [x] Guard responsavel pela dependencia do token
+- [ ] Criar sistema de permições RBAC (Controle baseado em roles)
+  - [ ] Definir Tabelas
+  - [ ] Criar módulo
 
 ### Módulo de usuário
 
 - [x] Testes de integração
-- [ ] Implementar guard Admin para todas as rotas
+- [x] Implementar guard Admin para todas as rotas
+
+### Módulo de Roles
+
+**Módulo responsável por gerenciar as permições dos admins:**
+
+- [ ] Método para criar permições iniciais
+- [ ] Método para editar permições
+- [ ] Método para trocar role
+
+### Módulo de Livros
+
+**Módulo responsável por adiconar e quantificar os livros do acervo:**
+
+- [ ] Método para adicionar um novo livro ao acervo
+- [ ] Método para remover um novo livro do acervo
+- [ ] Método para atualizar os livros do acervo
 
 ---
 
