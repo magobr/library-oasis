@@ -5,7 +5,9 @@ import { DataBaseModule } from 'src/database/database.module';
 
 
 @Module({
-  imports: [DataBaseModule],
+  imports: [
+    DataBaseModule
+  ],
   controllers: [UserController],
   providers: [UserService, DataBaseModule],
 })
