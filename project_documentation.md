@@ -27,8 +27,8 @@
 
 - [x] Testes de integração
 - [x] Guard responsavel pela dependencia do token
-- [ ] Criar sistema de permições RBAC (Controle baseado em roles)
-  - [ ] Definir Tabelas
+- [x] Criar sistema de permições RBAC (Controle baseado em roles)
+  - [x] Definir Tabelas
   - [ ] Criar módulo
 
 ### Módulo de usuário
