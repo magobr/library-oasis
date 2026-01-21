@@ -11,7 +11,7 @@ import { AuthAdminDto } from './dto/auth-admin.dto';
 @Injectable()
 export class AdminService {
   constructor(
-    private readonly databaseService: DataBaseService, 
+    private readonly databaseService: DataBaseService,
     private jwtService: JwtService
   ) {}
 

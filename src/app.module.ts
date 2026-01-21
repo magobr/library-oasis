@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
+import { RbacModule } from './rbac/rbac.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    RbacModule,
   ],
   controllers: [AppController],
   providers: [AppService],

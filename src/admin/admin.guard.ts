@@ -22,7 +22,7 @@ export class AdminGuard implements CanActivate {
             }
 
             const user_token = request.headers.authorization?.replace('Bearer ', '');
-            console.log(user_token);
+
             if (!user_token) {
                 throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);        
             }
