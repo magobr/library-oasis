@@ -4,6 +4,11 @@ import { InsertRoleRbacDto } from './dto/insert_role-rbac.dto';
 import { DataBaseService } from '../database/database.service';
 import { UUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
+import { VerifyRoleRbacDto } from './dto/verify_roles-rbac.dto';
+import { ResponseRoleTypeRbacDto } from './dto/response_roletype-rbac.dto';
+import { ResponseRoleRbacDto } from './dto/response_role-rbac.dto';
+import { ResponseUpdateRoleRbacDto } from './dto/response_update_role-rbac.dto';
+import { UpdateRoleRbacDto } from './dto/update_role-rbac.dto';
 
 @Injectable()
 export class RbacService {
@@ -12,12 +17,16 @@ export class RbacService {
         private jwtService: JwtService  
     ) {}
 
-    async insetRole(role_types: InsertRoleRbacDto, admin: string) {
+    async insertRole(role_types: InsertRoleRbacDto, admin: string): Promise<ResponseRoleRbacDto> {
         try {
 
-            console.log(role_types)
-
             const admin_payload = this.verifyTokenSync(admin) as {id: UUID, email: string, name: string, iat: number, exp: number};
+
+            const roles_exist = await this.verifyRoles(admin_payload.id);
+
+            if (roles_exist) {
+                throw new HttpException('Admin already has a role', HttpStatus.BAD_REQUEST);
+            }
 
             const insert_role_type = await this.databaseService.roleTypes.create({
                 data: {
@@ -38,13 +47,98 @@ export class RbacService {
 
             return {
                 message: 'Role type and roles inserted successfully',
-                role_type: insert_role_type,
-                roles: insert_roles
+                role_type: insert_role_type.id,
+                roles: insert_roles.id
             }
 
         } catch (error) {
             throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    async getRoles(admin: string): Promise<ResponseRoleTypeRbacDto> {
+        try {
+            
+            const admin_payload = this.verifyTokenSync(admin) as {id: UUID, email: string, name: string, iat: number, exp: number};
+
+            const roles_admin = await this.databaseService.roleTypes.findFirst({
+                select: {
+                    id: true,
+                    type: true,
+                    create: true,
+                    read: true,
+                    update: true,
+                    delete: true
+                },
+                where: {
+                    roles: {
+                        some: {
+                            admin: {
+                                id: admin_payload.id
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (!roles_admin) {
+                throw new HttpException('No roles found for this admin', HttpStatus.NOT_FOUND);
+            }
+
+            return roles_admin;
+
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async updateRoeles(roles: UpdateRoleRbacDto, admin: string): Promise<ResponseUpdateRoleRbacDto> {
+        try {
+            const admin_payload = this.verifyTokenSync(admin) as {id: UUID, email: string, name: string, iat: number, exp: number};
+
+            const roles_admin = await this.verifyRoles(admin_payload.id);
+
+            if (!roles_admin) {
+                throw new HttpException('No roles found for this admin', HttpStatus.NOT_FOUND);
+            }
+
+            const new_roles_admin = await this.databaseService.roles.update({
+                data: {
+                    roleType: {
+                        update: {
+                            type: roles.role_type,
+                            create: roles.roles.create,
+                            read: roles.roles.read,
+                            update: roles.roles.update,
+                            delete: roles.roles.delete
+                        }
+                    }
+                },
+                where: {
+                    id: roles_admin.id,
+                }
+            });
+
+            return {
+                message: 'Role type and roles inserted successfully',
+                roles: new_roles_admin.id
+            }
+            
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async verifyRoles(admin: UUID): Promise<VerifyRoleRbacDto | null> {
+        const roles_admin = await this.databaseService.roles.findFirst({
+            where: {
+                admin: {
+                    id: admin
+                }
+            }
+        });
+
+        return roles_admin;
     }
 
     verifyTokenSync(token: string) {

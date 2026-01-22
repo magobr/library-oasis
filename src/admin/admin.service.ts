@@ -127,7 +127,22 @@ export class AdminService {
     try {
       const admin = await this.databaseService.systemAdmin.findFirst({
         where: { email: email },
-        select: { id: true, email: true, name: true, password: true }
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          password: true,
+          roles: {
+            select: {
+              id: true,
+              roleType: {
+                select: {
+                  id: true,
+                }
+              }
+            }
+          }
+        },
       });
 
       if (!admin) {
@@ -143,7 +158,9 @@ export class AdminService {
       const payload = {
         id: admin.id,
         email: admin.email,
-        name: admin.name
+        name: admin.name,
+        role: admin.roles[0].id,
+        roleType: admin.roles[0].roleType.id
       };
 
       const access_token = await this.jwtService.signAsync(payload);
