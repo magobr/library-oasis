@@ -32,7 +32,7 @@ export class AdminGuard implements CanActivate {
                     secret: process.env.SECRET_JWT
                 }
             );
-        } catch {
+        } catch (e) {
             throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);        
         }
         return true;

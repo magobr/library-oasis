@@ -15,7 +15,9 @@ import { RbacService } from './rbac.service';
             signOptions: { expiresIn: '7d' },
         }),
     ],
-    exports: [],
+    exports: [
+        RbacService
+    ],
     controllers: [RbacController],
     providers: [RbacService, DataBaseModule],
 })

@@ -29,20 +29,22 @@
 - [x] Guard responsavel pela dependencia do token
 - [x] Criar sistema de permições RBAC (Controle baseado em roles)
   - [x] Definir Tabelas
-  - [ ] Criar módulo
+  - [x] Criar módulo
 
 ### Módulo de usuário
 
 - [x] Testes de integração
 - [x] Implementar guard Admin para todas as rotas
+- [X] Implementar criação de roles iniciais no cadastro de admin
 
 ### Módulo de Roles
 
 **Módulo responsável por gerenciar as permições dos admins:**
 
-- [ ] Método para criar permições iniciais
-- [ ] Método para editar permições
-- [ ] Método para trocar role
+- [x] Método para criar permições iniciais
+- [x] Método para editar permições
+- [X] Método para buscar role
+- [x] Atualizar ENUM UserRole adicionando o valor BOOKS
 
 ### Módulo de Livros
 
