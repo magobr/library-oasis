@@ -1,9 +1,11 @@
-import { Param, Controller, Body, Get, Post, Put, Delete } from '@nestjs/common';
+import { Param, Controller, Body, Get, Post, Put, Delete, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import * as crypto from 'crypto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { AdminGuard } from './admin.guard';
 
+// @UseGuards(AdminGuard)
 @Controller('admin')
 export class AdminController {
     constructor(private readonly adminService: AdminService) { }

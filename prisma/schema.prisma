@@ -69,4 +69,5 @@ enum LoanStatus {
 enum UserRole {
   USER
   ADMIN
+  BOOKS
 }

@@ -18,9 +18,9 @@ export class RbacController {
     }
 
     @Get()
-    getRoles(@AdminDecorator() admin: string) {
+    getUserRoles(@AdminDecorator() admin: string) {
         const admin_token: string[] = admin.split("Bearer ");
-        return this.rbacService.getRoles(admin_token[1]);
+        return this.rbacService.getUserRoles(admin_token[1]);
     }
 
     @Put()

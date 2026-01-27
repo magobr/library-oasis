@@ -1,8 +1,8 @@
 
 import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
-import { InsertRoleRbacDto } from './dto/insert_role-rbac.dto';
-import { DataBaseService } from '../database/database.service';
 import { UUID } from 'crypto';
+import { InsertRoleRbacDto, RoleName } from './dto/insert_role-rbac.dto';
+import { DataBaseService } from '../database/database.service';
 import { JwtService } from '@nestjs/jwt';
 import { VerifyRoleRbacDto } from './dto/verify_roles-rbac.dto';
 import { ResponseRoleTypeRbacDto } from './dto/response_roletype-rbac.dto';
@@ -56,7 +56,42 @@ export class RbacService {
         }
     }
 
-    async getRoles(admin: string): Promise<ResponseRoleTypeRbacDto> {
+    async insertInnitialRoles(admin: string): Promise<ResponseRoleRbacDto> {
+        try {
+            const role: InsertRoleRbacDto = {
+                role_type: RoleName.ADMIN,
+                roles: { create: false, read: true, update: false, delete: false }
+            };
+
+            const insert_role_type = await this.databaseService.roleTypes.create({
+                data: {
+                    type: role.role_type,
+                    create: role.roles.create,
+                    read: role.roles.read,
+                    update: role.roles.update,
+                    delete: role.roles.delete
+                }
+            });
+
+            const insert_roles = await this.databaseService.roles.create({
+                data: {
+                    admin_id: admin,
+                    type_id: insert_role_type.id
+                }
+            });
+
+            return {
+                message: 'Role type and roles inserted successfully',
+                role_type: insert_role_type.id,
+                roles: insert_roles.id
+            }
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async getUserRoles(admin: string): Promise<ResponseRoleTypeRbacDto> {
         try {
             
             const admin_payload = this.verifyTokenSync(admin) as {id: UUID, email: string, name: string, iat: number, exp: number};
@@ -124,6 +159,33 @@ export class RbacService {
                 roles: new_roles_admin.id
             }
             
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async deleteRoles(admin: UUID): Promise<{ message: string }> {
+        try {
+            const roles_admin = await this.verifyRoles(admin);
+
+            if (!roles_admin) {
+                throw new HttpException('No roles found for this admin', HttpStatus.NOT_FOUND);
+            }
+
+            await this.databaseService.roles.delete({
+                where: {
+                    id: roles_admin.id
+                }
+            });
+
+            await this.databaseService.roleTypes.delete({
+                where: {
+                    id: roles_admin.type_id
+                }
+            });
+
+            return { message: 'Roles deleted successfully' };
+
         } catch (error) {
             throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
         }

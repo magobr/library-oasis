@@ -26,7 +26,8 @@ class Roles {
 
 enum RoleName {
   ADMIN = 'ADMIN',
-  USER = 'USER'
+  USER = 'USER',
+  BOOKS = 'BOOKS' 
 }
 
 export class UpdateRoleRbacDto {

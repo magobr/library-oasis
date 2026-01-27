@@ -19,9 +19,10 @@ class Roles {
   delete: boolean;
 }
 
-enum RoleName {
+export enum RoleName {
   ADMIN = 'ADMIN',
-  USER = 'USER'
+  USER = 'USER',
+  BOOKS = 'BOOKS'
 }
 
 export class InsertRoleRbacDto {
