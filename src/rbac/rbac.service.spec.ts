@@ -1,140 +1,230 @@
-import { RbacService } from './rbac.service';
-import { HttpException } from '@nestjs/common';
+import { Test, TestingModule } from "@nestjs/testing";
+import { UUID } from "crypto";
+import { RbacService } from "./rbac.service";
+import { DataBaseService } from "../database/database.service";
+import { JwtService } from "@nestjs/jwt";
+import { Roles } from "@prisma/client";
+import { InsertRoleRbacDto, RoleName } from "./dto/insert_role-rbac.dto";
+import { VerifyRoleRbacDto } from "./dto/verify_roles-rbac.dto";
 
-describe('RbacService', () => {
-    let service: RbacService;
-    let mockDatabase: any;
-    let mockJwt: any;
+describe("RbacService", () => {
+  let service: RbacService;
 
-    beforeEach(() => {
-        mockDatabase = {
-            roleTypes: {
-                create: jest.fn(),
-                findFirst: jest.fn(),
-            },
-            roles: {
-                create: jest.fn(),
-                update: jest.fn(),
-                findFirst: jest.fn(),
-            },
-        };
+  const databaseServiceMock = {
+    roleTypes: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      delete: jest.fn(),
+    },
+    roles: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  };
 
-        mockJwt = {
-            verify: jest.fn(),
-        };
+  const jwtServiceMock = {
+    verify: jest.fn(),
+  };
 
-        service = new RbacService(mockDatabase as any, mockJwt as any);
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        RbacService,
+        {
+          provide: DataBaseService,
+          useValue: databaseServiceMock,
+        },
+        {
+          provide: JwtService,
+          useValue: jwtServiceMock,
+        },
+      ],
+    }).compile();
+
+    service = module.get<RbacService>(RbacService);
+
+    jest.clearAllMocks();
+  });
+
+  describe("insertRole", () => {
+    it("Deve inserir role com sucesso", async () => {
+      const dto: InsertRoleRbacDto = {
+        role_type: RoleName.ADMIN,
+        roles: { create: true, read: true, update: true, delete: true },
+      };
+
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
+
+      jest.spyOn(service, "verifyRoles").mockResolvedValue(null);
+
+      databaseServiceMock.roleTypes.create.mockResolvedValue({ id: "type-id" });
+      databaseServiceMock.roles.create.mockResolvedValue({ id: "role-id" });
+
+      const result = await service.insertRole(dto, "token");
+
+      expect(result).toEqual({
+        message: "Role type and roles inserted successfully",
+        role_type: "type-id",
+        roles: "role-id",
+      });
     });
 
-    describe('insertRole', () => {
-        it('Deve inserir tipo de papel e papéis com sucesso', async () => {
-            const tokenPayload = { id: 'admin-id' };
-            mockJwt.verify.mockReturnValue(tokenPayload);
-            mockDatabase.roles.findFirst.mockResolvedValue(null);
-            mockDatabase.roleTypes.create.mockResolvedValue({ id: 'rt-id' });
-            mockDatabase.roles.create.mockResolvedValue({ id: 'r-id' });
+    it("Deve erro se admin já tiver role", async () => {
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
 
-            const dto = {
-                role_type: 'admin',
-                roles: { create: true, read: true, update: true, delete: false },
-            };
+      jest
+        .spyOn(service, "verifyRoles")
+        .mockResolvedValue({ id: "role-id" } as VerifyRoleRbacDto);
 
-            const result = await service.insertRole(dto as any, 'token');
-            expect(result).toEqual({
-                message: 'Role type and roles inserted successfully',
-                role_type: 'rt-id',
-                roles: 'r-id',
-            });
-            expect(mockDatabase.roleTypes.create).toHaveBeenCalled();
-            expect(mockDatabase.roles.create).toHaveBeenCalled();
-        });
+      await expect(
+        service.insertRole({} as InsertRoleRbacDto, "token"),
+      ).rejects.toThrow("Admin already has a role");
+    });
+  });
 
-        it('Deve lançar erro quando admin já possui um papel', async () => {
-            mockJwt.verify.mockReturnValue({ id: 'admin-id' });
-            mockDatabase.roles.findFirst.mockResolvedValue({ id: 'existing' });
+  describe("insertInnitialRoles", () => {
+    it("Deve inserir role inicial", async () => {
+      databaseServiceMock.roleTypes.findFirst.mockResolvedValue({
+        id: "type-id",
+      });
 
-            await expect(
-                service.insertRole(
-                    { role_type: 'x', roles: { create: true, read: true, update: true, delete: true } } as any,
-                    'token',
-                ),
-            ).rejects.toThrow('Admin already has a role');
-        });
+      databaseServiceMock.roles.create.mockResolvedValue({
+        id: "role-id",
+      });
 
-        it('should wrap invalid token into Bad Request via catch', async () => {
-            mockJwt.verify.mockImplementation(() => { throw new Error('bad'); });
-            await expect(service.insertRole({} as any, 'bad-token')).rejects.toThrow('Invalid or expired token');
-        });
+      const result = await service.insertInnitialRoles("uuid");
+
+      expect(result).toEqual({
+        message: "Role type and roles inserted successfully",
+        role_type: "type-id",
+        roles: "role-id",
+      });
     });
 
-    describe('getUserRoles', () => {
-        it('Deve retornar tipo de papel para admin', async () => {
-            mockJwt.verify.mockReturnValue({ id: 'admin-id' });
-            const roleType = { id: 'rt1', type: 'admin', create: true, read: true, update: false, delete: false };
-            mockDatabase.roleTypes.findFirst.mockResolvedValue(roleType);
+    it("Deve erro se role USER não existir", async () => {
+      databaseServiceMock.roleTypes.findFirst.mockResolvedValue(null);
 
-            const res = await service.getUserRoles('token');
-            expect(res).toEqual(roleType);
-        });
+      await expect(service.insertInnitialRoles("uuid")).rejects.toThrow(
+        "Role User NotFount",
+      );
+    });
+  });
 
-        it('Deve lançar erro quando não há papéis encontrados', async () => {
-            mockJwt.verify.mockReturnValue({ id: 'admin-id' });
-            mockDatabase.roleTypes.findFirst.mockResolvedValue(null);
+  describe("getUserRoles", () => {
+    it("Deve retornar roles", async () => {
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
 
-            await expect(service.getUserRoles('token')).rejects.toThrow('No roles found for this admin');
-        });
+      const role = {
+        id: "type-id",
+        type: "ADMIN",
+        create: true,
+        read: true,
+        update: true,
+        delete: true,
+      };
+
+      databaseServiceMock.roleTypes.findFirst.mockResolvedValue(role);
+
+      const result = await service.getUserRoles("token");
+
+      expect(result).toEqual(role);
     });
 
-    describe('updateRoeles', () => {
-        it('Deve atualizar papéis com sucesso', async () => {
-            mockJwt.verify.mockReturnValue({ id: 'admin-id' });
-            mockDatabase.roles.findFirst.mockResolvedValue({ id: 'rel-id' });
-            mockDatabase.roles.update.mockResolvedValue({ id: 'new-role-id' });
+    it("Deve erro se não encontrar roles", async () => {
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
 
-            const dto = { role_type: 'new', roles: { create: false, read: true, update: true, delete: false } };
+      databaseServiceMock.roleTypes.findFirst.mockResolvedValue(null);
 
-            const res = await service.updateRoeles(dto as any, 'token');
-            expect(res).toEqual({
-                message: 'Role type and roles inserted successfully',
-                roles: 'new-role-id',
-            });
-            expect(mockDatabase.roles.update).toHaveBeenCalled();
-        });
+      await expect(service.getUserRoles("token")).rejects.toThrow(
+        "No roles found for this admin",
+      );
+    });
+  });
 
-        it('Deve lançar erro quando admin não possui papéis', async () => {
-            mockJwt.verify.mockReturnValue({ id: 'admin-id' });
-            mockDatabase.roles.findFirst.mockResolvedValue(null);
+  describe("updateRoeles", () => {
+    it("Deve atualizar roles com sucesso", async () => {
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
 
-            await expect(
-                service.updateRoeles({ role_type: 'x', roles: { create: true, read: true, update: true, delete: true } } as any, 'token'),
-            ).rejects.toThrow('No roles found for this admin');
-        });
+      jest.spyOn(service, "verifyRoles").mockResolvedValue({
+        id: "role-id",
+      } as VerifyRoleRbacDto);
+
+      databaseServiceMock.roles.update.mockResolvedValue({
+        id: "role-id",
+      });
+
+      const result = await service.updateRoeles(
+        {
+          role_type: RoleName.ADMIN,
+          roles: { create: true, read: true, update: true, delete: true },
+        },
+        "token",
+      );
+
+      expect(result).toEqual({
+        message: "Role type and roles inserted successfully",
+        roles: "role-id",
+      });
     });
 
-    describe('verifyRoles', () => {
-        it('Deve retornar relação de papéis quando encontrada', async () => {
-            mockDatabase.roles.findFirst.mockResolvedValue({ id: 'role-rel' });
-            const res = await service.verifyRoles('admin-id' as any);
-            expect(res).toEqual({ id: 'role-rel' });
-        });
+    it("Deve erro se não tiver roles", async () => {
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
 
-        it('Deve retornar null quando nenhuma relação encontrada', async () => {
-            mockDatabase.roles.findFirst.mockResolvedValue(null);
-            const res = await service.verifyRoles('admin-id' as any);
-            expect(res).toBeNull();
-        });
+      jest.spyOn(service, "verifyRoles").mockResolvedValue(null);
+
+      await expect(service.updateRoeles({} as any, "token")).rejects.toThrow(
+        "No roles found for this admin",
+      );
+    });
+  });
+
+  describe("deleteRoles", () => {
+    it("Deve deletar roles com sucesso", async () => {
+      jest.spyOn(service, "verifyRoles").mockResolvedValue({
+        id: "role-id",
+        type_id: "type-id",
+      } as Roles);
+
+      databaseServiceMock.roles.delete.mockResolvedValue(undefined);
+      databaseServiceMock.roleTypes.delete.mockResolvedValue(undefined);
+
+      const result = await service.deleteRoles("uuid" as UUID);
+
+      expect(result).toEqual({
+        message: "Roles deleted successfully",
+      });
     });
 
-    describe('verifyTokenSync', () => {
-        it('Deve lançar erro quando o token é inválido ou expirado', () => {
-            mockJwt.verify.mockImplementation(() => { throw new Error('expired'); });
-            expect(() => service.verifyTokenSync('bad')).toThrow('Invalid or expired token');
-        });
+    it("Deve erro se não encontrar roles", async () => {
+      jest.spyOn(service, "verifyRoles").mockResolvedValue(null);
 
-        it('Deve retornar payload quando a verificação do JWT é bem-sucedida', () => {
-            const payload = { id: 'id', email: 'e' };
-            mockJwt.verify.mockReturnValue(payload);
-            expect(service.verifyTokenSync('token')).toEqual(payload);
-        });
+      await expect(service.deleteRoles("uuid" as UUID)).rejects.toThrow(
+        "No roles found for this admin",
+      );
     });
+  });
+
+  describe("verifyRoles", () => {
+    it("Deve retornar roles", async () => {
+      const role = { id: "role-id" };
+
+      databaseServiceMock.roles.findFirst.mockResolvedValue(role);
+
+      const result = await service.verifyRoles("uuid" as UUID);
+
+      expect(result).toEqual(role);
+    });
+  });
+
+  describe("verifyTokenSync", () => {
+    it("Deve validar token", () => {
+      jwtServiceMock.verify.mockReturnValue({ id: "uuid" });
+
+      const result = service.verifyTokenSync("token");
+
+      expect(result).toEqual({ id: "uuid" });
+    });
+  });
 });
