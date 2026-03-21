@@ -45,6 +45,7 @@
 - [x] Método para editar permições
 - [X] Método para buscar role
 - [x] Atualizar ENUM UserRole adicionando o valor BOOKS
+- [ ] Criar e implementar midleware para verificar o tipo de permissão
 
 ### Módulo de Livros
 
@@ -69,3 +70,8 @@
 - Guard Responsável por atribuir dependencia de token de autenticação
 - Terá uma dependencia de token de authenticacao de SystemAdmin
 - Terá um usuario padrão com permissão de apenas adicionar novos usuários
+
+### RBAC
+
+- Responsável por gerenciar as permições dos Admins
+- Módulo interno

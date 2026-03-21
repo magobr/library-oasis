@@ -1,30 +1,31 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { UUID } from 'crypto';
-import { RbacService } from '../rbac/rbac.service';
-import { DataBaseService } from '../database/database.service';
-import { AdminDto } from './dto/admin.dto';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
-import { AuthAdminDto } from './dto/auth-admin.dto';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { UUID } from "crypto";
+import { RbacService } from "../rbac/rbac.service";
+import { DataBaseService } from "../database/database.service";
+import { AdminDto } from "./dto/admin.dto";
+import { CreateAdminDto } from "./dto/create-admin.dto";
+import { UpdateAdminDto } from "./dto/update-admin.dto";
+import { AuthAdminDto } from "./dto/auth-admin.dto";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly databaseService: DataBaseService,
     private readonly rbacService: RbacService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   async find(id: UUID): Promise<AdminDto> {
     try {
-      const admin = await this.databaseService.systemAdmin.findFirst({
+      const admin = await this.databaseService.systemAdmin.findUnique({
         where: { id: id },
       });
 
       if (!admin) {
-        throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
+        throw new HttpException("Admin not found", HttpStatus.NOT_FOUND);
       }
 
       return {
@@ -34,7 +35,14 @@ export class AdminService {
         createdAt: admin.createdAt,
       };
     } catch (e) {
-      return e;
+      if (e instanceof HttpException) {
+        throw e;
+      } else {
+        throw new HttpException(
+          "Internal Server Error",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
@@ -52,7 +60,10 @@ export class AdminService {
       const roles = await this.rbacService.insertInnitialRoles(new_admin.id);
 
       if (!roles) {
-        throw new HttpException('Error assigning roles to admin', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          "Error assigning roles to admin",
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       return {
@@ -62,15 +73,24 @@ export class AdminService {
         createdAt: new_admin.createdAt,
       };
     } catch (e) {
-
-      if (e.code === 'P2002') {
-        throw new HttpException('Email already in use', HttpStatus.CONFLICT);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new HttpException("Email already in use", HttpStatus.CONFLICT);
       }
-      
-      return e;
+
+      if (e instanceof HttpException) {
+        throw e;
+      } else {
+        throw new HttpException(
+          "Internal Server Error",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
-  
+
   async update(id: UUID, admin: UpdateAdminDto): Promise<AdminDto> {
     try {
       let hash_password: string;
@@ -90,32 +110,44 @@ export class AdminService {
         where: { id: id },
         data: {
           email: admin.email,
-          name: admin.name
+          name: admin.name,
         },
         select: {
           id: true,
           email: true,
           name: true,
-          createdAt: true
-        }
+          createdAt: true,
+        },
       });
 
       return updated_admin;
     } catch (e) {
-
-      if(e.code === 'P2025') {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
+        throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
-      if(e.code === 'P2002') {
-        throw new HttpException('Email already in use', HttpStatus.CONFLICT);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new HttpException("Email already in use", HttpStatus.CONFLICT);
       }
 
-      return e;
+      if (e instanceof HttpException) {
+        throw e;
+      } else {
+        throw new HttpException(
+          "Internal Server Error",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
-  async delete(id: UUID) {
+  async delete(id: UUID): Promise<{ message: string }> {
     try {
       await this.rbacService.deleteRoles(id);
 
@@ -123,71 +155,96 @@ export class AdminService {
         where: { id: id },
       });
 
-      return { message: 'Admin deleted successfully' };
+      return { message: "Admin deleted successfully" };
     } catch (e) {
-      if(e.code === 'P2025') {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
+        throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
-      return e;
+      if (e instanceof HttpException) {
+        throw e;
+      } else {
+        throw new HttpException(
+          "Internal Server Error",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
-  async authenticate({ email, password }: { email: string; password: string }): Promise<AuthAdminDto> {
-    try {
-      const admin = await this.databaseService.systemAdmin.findFirst({
-        where: { email: email },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          password: true,
-          roles: {
-            select: {
-              id: true,
-              roleType: {
-                select: {
-                  id: true,
-                }
-              }
-            }
-          }
+  async authenticate({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<AuthAdminDto> {
+    const admin = await this.databaseService.systemAdmin.findUnique({
+      where: { email: email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: true,
+        roles: {
+          select: {
+            id: true,
+            roleType: {
+              select: {
+                id: true,
+              },
+            },
+          },
         },
-      });
+      },
+    });
 
-      if (!admin) {
-        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-      }
-
-      const isPasswordValid = await this.comparePassword(password, admin.password);
-
-      if (!isPasswordValid) {
-        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-      }
-
-      const payload = {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.roles[0].id,
-        roleType: admin.roles[0].roleType.id
-      };
-
-      const access_token = await this.jwtService.signAsync(payload);
-
-      return {access_token};
-    } catch (e) {
-      return e;
+    if (!admin) {
+      throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
     }
+
+    const isPasswordValid = await this.comparePassword(
+      password,
+      admin.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new HttpException("Invalid credentials", HttpStatus.UNAUTHORIZED);
+    }
+
+    if (!admin.roles || admin.roles.length === 0) {
+      throw new HttpException(
+        "User has no roles assigned",
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const payload = {
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: admin.roles[0].id,
+      roleType: admin.roles[0].roleType.id,
+    };
+
+    const access_token = await this.jwtService.signAsync(payload);
+
+    return { access_token };
   }
 
-  async hashPassword(password: string): Promise<string> {
+  private async hashPassword(password: string): Promise<string> {
     const saltOrRounds = 10;
     const hash = await bcrypt.hash(password, saltOrRounds);
     return hash;
   }
 
-  async comparePassword(password: string, hash: string): Promise<boolean> {
+  private async comparePassword(
+    password: string,
+    hash: string,
+  ): Promise<boolean> {
     const match = await bcrypt.compare(password, hash);
     return match;
   }
