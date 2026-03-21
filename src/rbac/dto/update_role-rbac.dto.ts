@@ -1,10 +1,6 @@
-import {
-  IsBoolean,
-  IsEnum,
-  IsOptional,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional } from "class-validator";
 
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 
 class Roles {
   @IsOptional()
@@ -25,14 +21,14 @@ class Roles {
 }
 
 enum RoleName {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-  BOOKS = 'BOOKS' 
+  ADMIN = "ADMIN",
+  USER = "USER",
+  BOOKS = "BOOKS",
 }
 
 export class UpdateRoleRbacDto {
   @IsOptional()
-  @IsEnum(RoleName, { message: 'role_type must be a valid enum value' })
+  @IsEnum(RoleName, { message: "role_type must be a valid enum value" })
   role_type: RoleName;
 
   @Type(() => Roles)

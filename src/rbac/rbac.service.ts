@@ -1,11 +1,6 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { UUID } from "crypto";
-import { InsertRoleRbacDto, RoleName } from "./dto/insert_role-rbac.dto";
+import { InsertRoleRbacDto } from "./dto/insert_role-rbac.dto";
 import { DataBaseService } from "../database/database.service";
 import { JwtService } from "@nestjs/jwt";
 import { VerifyRoleRbacDto } from "./dto/verify_roles-rbac.dto";
@@ -13,6 +8,7 @@ import { ResponseRoleTypeRbacDto } from "./dto/response_roletype-rbac.dto";
 import { ResponseRoleRbacDto } from "./dto/response_role-rbac.dto";
 import { ResponseUpdateRoleRbacDto } from "./dto/response_update_role-rbac.dto";
 import { UpdateRoleRbacDto } from "./dto/update_role-rbac.dto";
+import { JwtPayload } from "./dto/jwt.dto";
 
 @Injectable()
 export class RbacService {
@@ -66,7 +62,14 @@ export class RbacService {
         roles: insert_roles.id,
       };
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -95,8 +98,14 @@ export class RbacService {
         roles: insert_roles.id,
       };
     } catch (error) {
-      console.log(error);
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -139,7 +148,14 @@ export class RbacService {
 
       return roles_admin;
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -187,7 +203,14 @@ export class RbacService {
         roles: new_roles_admin.id,
       };
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -216,7 +239,14 @@ export class RbacService {
 
       return { message: "Roles deleted successfully" };
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -233,16 +263,9 @@ export class RbacService {
   }
 
   verifyTokenSync(token: string) {
-    try {
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
-      });
-      return payload;
-    } catch (error) {
-      throw new HttpException(
-        "Invalid or expired token",
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+    const payload: JwtPayload = this.jwtService.verify(token, {
+      secret: process.env.JWT_SECRET,
+    });
+    return payload;
   }
 }
