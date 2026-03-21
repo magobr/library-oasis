@@ -1,332 +1,297 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AdminService } from './admin.service';
-import { DataBaseService } from '../database/database.service';
-import { AdminDto } from './dto/admin.dto';
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { JwtService } from '@nestjs/jwt';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { Test, TestingModule } from "@nestjs/testing";
+import * as crypto from "crypto";
+import { AdminService } from "./admin.service";
+import { DataBaseService } from "../database/database.service";
+import { RbacService } from "../rbac/rbac.service";
+import { JwtService } from "@nestjs/jwt";
+import { HttpException, HttpStatus } from "@nestjs/common";
+import * as bcrypt from "bcrypt";
+import { Prisma } from "@prisma/client";
+import { UpdateAdminDto } from "./dto/update-admin.dto";
+import { CreateAdminDto } from "./dto/create-admin.dto";
 
-describe('User Service', () => {
-    let admin_service: AdminService;
-    let jwtService: JwtService;
+jest.mock("bcrypt");
 
-    const databaseServiceMock = {
-        systemAdmin: {
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        }
-    };
+describe("AdminService", () => {
+  let service: AdminService;
 
-    jest.mock('bcrypt', () => ({
-        compare: jest.fn(),
-        hash: jest.fn(),
-    }));
+  const databaseServiceMock = {
+    systemAdmin: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    $transaction: jest.fn(),
+  };
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-        providers: [
-            AdminService,
-            JwtService,
-            DataBaseService,
-            {
-                provide: DataBaseService,
-                useValue: databaseServiceMock,
-            }
+  const rbacServiceMock = {
+    insertInnitialRoles: jest.fn(),
+    deleteRoles: jest.fn(),
+  };
+
+  const jwtServiceMock = {
+    signAsync: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AdminService,
+        { provide: DataBaseService, useValue: databaseServiceMock },
+        { provide: RbacService, useValue: rbacServiceMock },
+        { provide: JwtService, useValue: jwtServiceMock },
+      ],
+    }).compile();
+
+    service = module.get<AdminService>(AdminService);
+
+    jest.clearAllMocks();
+  });
+
+  describe("find", () => {
+    it("deve retornar admin", async () => {
+      const adminMock = {
+        id: "1",
+        email: "test@test.com",
+        name: "Test",
+        createdAt: new Date(),
+      };
+
+      databaseServiceMock.systemAdmin.findUnique.mockResolvedValue(adminMock);
+
+      const result = await service.find("1" as crypto.UUID);
+
+      expect(result).toEqual(adminMock);
+    });
+
+    it("deve lançar erro se não encontrar", async () => {
+      databaseServiceMock.systemAdmin.findUnique.mockResolvedValue(null);
+
+      await expect(service.find("1" as crypto.UUID)).rejects.toThrow(
+        new HttpException("Admin not found", HttpStatus.NOT_FOUND),
+      );
+    });
+  });
+
+  describe("create", () => {
+    it("deve criar admin com sucesso", async () => {
+      const dto = {
+        email: "test@test.com",
+        name: "Test",
+        password: "123",
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed");
+
+      databaseServiceMock.$transaction.mockImplementation(
+        async (cb: () => Promise<unknown>) => {
+          return cb();
+        },
+      );
+
+      databaseServiceMock.systemAdmin.create.mockResolvedValue({
+        id: "1",
+        email: dto.email,
+        name: dto.name,
+        createdAt: new Date(),
+      });
+
+      rbacServiceMock.insertInnitialRoles.mockResolvedValue(true);
+
+      const result = await service.create(dto as CreateAdminDto);
+
+      expect(result.email).toBe(dto.email);
+      expect(rbacServiceMock.insertInnitialRoles).toHaveBeenCalled();
+    });
+
+    it("deve lançar erro se email já existir (P2002)", async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint",
+        {
+          code: "P2002",
+          clientVersion: "test",
+        },
+      );
+
+      databaseServiceMock.systemAdmin.create.mockRejectedValue(error);
+
+      await expect(
+        service.create({
+          email: "teste@email.com",
+          name: "Teste",
+          password: "123456",
+        } as CreateAdminDto),
+      ).rejects.toMatchObject({
+        response: "Email already in use",
+        status: 409,
+      });
+    });
+
+    it("deve lançar erro se roles falharem", async () => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed");
+
+      databaseServiceMock.$transaction.mockImplementation(
+        async (cb: () => Promise<unknown>) => {
+          return cb();
+        },
+      );
+
+      databaseServiceMock.systemAdmin.create.mockResolvedValue({
+        id: "1",
+      });
+
+      rbacServiceMock.insertInnitialRoles.mockResolvedValue(null);
+
+      await expect(service.create({} as CreateAdminDto)).rejects.toThrow(
+        "Error assigning roles to admin",
+      );
+    });
+  });
+
+  describe("update", () => {
+    it("deve atualizar admin", async () => {
+      databaseServiceMock.systemAdmin.update.mockResolvedValue({
+        id: "1",
+        email: "new@test.com",
+        name: "New",
+        createdAt: new Date(),
+      });
+
+      const result = await service.update("1" as crypto.UUID, {
+        email: "new@test.com",
+        name: "New",
+      });
+
+      expect(result.email).toBe("new@test.com");
+    });
+
+    it("deve atualizar senha se enviada", async () => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed");
+
+      databaseServiceMock.systemAdmin.update.mockResolvedValue({
+        id: "1",
+        email: "test",
+        name: "test",
+        createdAt: new Date(),
+      });
+
+      await service.update(
+        "1" as crypto.UUID,
+        {
+          password: "123",
+        } as UpdateAdminDto,
+      );
+
+      expect(bcrypt.hash).toHaveBeenCalled();
+    });
+
+    it("deve lançar erro P2025", async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint",
+        {
+          code: "P2025",
+          clientVersion: "test",
+        },
+      );
+
+      databaseServiceMock.systemAdmin.update.mockRejectedValue(error);
+
+      await expect(
+        service.update("1" as crypto.UUID, {} as UpdateAdminDto),
+      ).rejects.toThrow("User not found");
+    });
+  });
+
+  // =========================
+  // DELETE
+  // =========================
+  describe("delete", () => {
+    it("deve deletar admin", async () => {
+      rbacServiceMock.deleteRoles.mockResolvedValue(true);
+      databaseServiceMock.systemAdmin.delete.mockResolvedValue(true);
+
+      const result = await service.delete("1" as crypto.UUID);
+
+      expect(result.message).toBe("Admin deleted successfully");
+    });
+
+    it("deve lançar erro P2025", async () => {
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint",
+        {
+          code: "P2025",
+          clientVersion: "test",
+        },
+      );
+
+      databaseServiceMock.systemAdmin.delete.mockRejectedValue(error);
+
+      await expect(service.delete("1" as crypto.UUID)).rejects.toThrow(
+        "User not found",
+      );
+    });
+  });
+
+  describe("authenticate", () => {
+    it("deve autenticar com sucesso", async () => {
+      databaseServiceMock.systemAdmin.findUnique.mockResolvedValue({
+        id: "1",
+        email: "test@test.com",
+        name: "Test",
+        password: "hashed",
+        roles: [
+          {
+            id: "role1",
+            roleType: { id: "type1" },
+          },
         ],
-        }).compile();
+      });
 
-        admin_service = module.get<AdminService>(AdminService);
-        jwtService = module.get<JwtService>(JwtService);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      jwtServiceMock.signAsync.mockResolvedValue("token");
+
+      const result = await service.authenticate({
+        email: "test@test.com",
+        password: "123",
+      });
+
+      expect(result).toEqual({ access_token: "token" });
     });
 
-    describe('Find Admin', () => {
-        it('Deve retornar sucesso na busca', async () => {
-            const admin: AdminDto = {
-                id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-                email:"admin@example.com",
-                name:"Admin User",
-                createdAt: new Date(),
-            };
-            databaseServiceMock.systemAdmin.findFirst = jest.fn().mockResolvedValue(admin);
-            const result = await admin_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
-            expect(result).toEqual(admin);
-        });
+    it("deve falhar se usuário não existir", async () => {
+      databaseServiceMock.systemAdmin.findUnique.mockResolvedValue(null);
 
-        it('Deve retornar erro na busca', async () => {
-            databaseServiceMock.systemAdmin.findFirst = jest.fn().mockResolvedValue(null);
-            const result = await admin_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
-            expect(result).toEqual(new HttpException('Admin not found', HttpStatus.NOT_FOUND));
-        });
-
-        it('Deve retornar erro de exceção na busca', async () => {
-            const exception = new Error('Database error');
-            databaseServiceMock.systemAdmin.findFirst = jest.fn().mockRejectedValue(exception);
-            const result = await admin_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
-            expect(result).toEqual(exception);
-        });
+      await expect(
+        service.authenticate({ email: "x", password: "x" }),
+      ).rejects.toThrow("Invalid credentials");
     });
 
-    describe('Create Admin', () => {
-        it('Deve retornar sucesso na criacao de admin', async () => {
-            const new_admin: CreateAdminDto = {
-                email:"teste@email.com",
-                name:"Teste",
-                password:"password123",
-            };
+    it("deve falhar se senha inválida", async () => {
+      databaseServiceMock.systemAdmin.findUnique.mockResolvedValue({
+        password: "hashed",
+        roles: [{ id: "1", roleType: { id: "1" } }],
+      });
 
-            const response_admin: AdminDto = {
-                id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-                email:"teste@email.com",
-                name:"Teste",
-                createdAt: new Date(),
-            };
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-            databaseServiceMock.systemAdmin.create = jest.fn().mockReturnValue(response_admin);
-
-            const result = await admin_service.create(new_admin);
-
-            expect(result).toEqual(response_admin);
-            expect(databaseServiceMock.systemAdmin.create).toHaveBeenCalledWith({
-                data: {
-                    email: new_admin.email,
-                    name: new_admin.name,
-                    password: expect.any(String),
-                }
-            });
-        });
-
-        it('Deve retornar erro de excecao na criacao de admin', async () => {
-            const new_admin: CreateAdminDto = {
-                email:"teste@email.com",
-                name:"Teste",
-                password:"password123",
-            };
-
-            const exception = new Error('Database error');
-            databaseServiceMock.systemAdmin.create = jest.fn().mockRejectedValue(exception);
-
-            const result = await admin_service.create(new_admin);
-
-            expect(result).toEqual(exception);
-        });
-
-        it('Deve retornar erro de email ja em uso na criacao de admin', async () => {
-            const new_admin: CreateAdminDto = {
-                email:"<EMAIL>",
-                name:"Teste",
-                password:"password123",
-            };
-
-            const exception: any = new Error('Unique constraint failed on the fields: (`email`)');
-            exception.code = 'P2002';
-            databaseServiceMock.systemAdmin.create = jest.fn().mockRejectedValue(exception);
-
-            try {
-                await admin_service.create(new_admin);
-            } catch (error) {
-                expect(error).toEqual(new HttpException('Email already in use', HttpStatus.CONFLICT));                
-            }
-        });
+      await expect(
+        service.authenticate({ email: "x", password: "x" }),
+      ).rejects.toThrow("Invalid credentials");
     });
 
-    describe('Update Admin', () => {
-        it('Deve retornar sucesso na atualizacao de admin', async () => {
-            const admin_data = {
-                name: "Teste Atualizado",
-                email: "teste@teste.com"
-            };
+    it("deve falhar se não tiver roles", async () => {
+      databaseServiceMock.systemAdmin.findUnique.mockResolvedValue({
+        password: "hashed",
+        roles: [],
+      });
 
-            const updated_admin_response: AdminDto = {
-                id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-                email:"teste@email.com",
-                name:"Teste Atualizado",
-                createdAt: new Date(),
-            };
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-            databaseServiceMock.systemAdmin.update = jest.fn().mockReturnValue(updated_admin_response);
-
-            const result = await admin_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", admin_data);
-
-            expect(result).toEqual(updated_admin_response);
-            expect(databaseServiceMock.systemAdmin.update).toHaveBeenCalledWith({
-                where: { id: "3caeba63-22ef-482d-96a9-e37b940b5177" },
-                data: {
-                    ...admin_data
-                },
-                select: {
-                    id: true,
-                    email: true,
-                    name: true,
-                    createdAt: true
-                }
-            });
-        });
-
-        it('Deve retornar erro de excecao na atualizacao de admin', async () => {
-            const exception = new Error('Database error');
-            databaseServiceMock.systemAdmin.update = jest.fn().mockRejectedValue(exception);
-
-            const result = await admin_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-                name: "Teste Atualizado",
-            });
-
-            expect(result).toEqual(exception);
-        });
-
-        it('Deve retornar erro se nao encontrar admin para atualizacao', async () => {
-            const exception = new HttpException('Admin not found', HttpStatus.NOT_FOUND);
-
-            databaseServiceMock.systemAdmin.update = jest.fn().mockRejectedValue(exception);
-
-            const result = await admin_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-                name: "Teste Atualizado",
-            });
-
-            expect(result).toEqual(exception);
-        });
-
-        it('Deve retornar erro de email ja em uso na atualizacao de admin', async () => {
-            const exception: any = new Error('Unique constraint failed on the fields: (`email`)');
-            exception.code = 'P2002';
-            databaseServiceMock.systemAdmin.update = jest.fn().mockRejectedValue(exception);
-
-            try {
-                await admin_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-                    name: "Teste Atualizado",
-                    email: "teste@email.com"
-                });
-            } catch (error) {
-                expect(error).toEqual(new HttpException('Email already in use', HttpStatus.CONFLICT));
-            }
-        });
-
-        it('Deve retornar sucesso quando for atualizar senha', async () =>{
-            const admin_data: UpdateAdminDto = {
-                name: "Teste Atualizado",
-                email: "teste@teste.com",
-                password: "newpassword123"
-            };
-
-            const updated_admin_response: AdminDto = {
-                id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-                email:"teste@email.com",
-                name:"Teste Atualizado",
-                createdAt: new Date(),
-            };
-
-            databaseServiceMock.systemAdmin.update = jest.fn().mockReturnValue(updated_admin_response);
-
-            const result = await admin_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", admin_data);
-
-            expect(result).toEqual(updated_admin_response);
-            expect(databaseServiceMock.systemAdmin.update).toHaveBeenCalledWith({
-                where: { id: "3caeba63-22ef-482d-96a9-e37b940b5177" },
-                data: {
-                    password: expect.any(String),
-                }
-            });
-        }); 
+      await expect(
+        service.authenticate({ email: "x", password: "x" }),
+      ).rejects.toThrow("User has no roles assigned");
     });
-
-    describe('Delete Admin', () => {
-        it('Deve deletar admin com sucesso', async () => {
-            const response = { message: 'Admin deleted successfully' };
-            databaseServiceMock.systemAdmin.delete = jest.fn().mockResolvedValue(undefined);
-
-            const result = await admin_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
-
-            expect(result).toEqual(response);
-            expect(databaseServiceMock.systemAdmin.delete).toHaveBeenCalledWith({
-                where: { id: "3caeba63-22ef-482d-96a9-e37b940b5177" }
-            });
-        });
-
-        it('Deve retornar erro de excecao ao deletar admin', async () => {
-            const exception = new Error('Database error');
-            databaseServiceMock.systemAdmin.delete = jest.fn().mockRejectedValue(exception);
-
-            const result = await admin_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
-
-            expect(result).toEqual(exception);
-        });
-    });
-
-    describe('Authenticate Admin', () => {
-        
-        it('deve autenticar com sucesso e retornar access_token', async () => {
-            const adminMock = {
-                id: 'uuid-123',
-                email: 'admin@email.com',
-                name: 'Admin',
-                password: 'hashed-password'
-            };
-
-            jest.spyOn(databaseServiceMock.systemAdmin, 'findFirst').mockResolvedValue(adminMock as any);
-
-            jest.spyOn(admin_service, 'comparePassword').mockResolvedValue(true);
-
-            jwtService.signAsync = jest.fn().mockResolvedValue('jwt-token');
-
-            const result = await admin_service.authenticate({
-                password: 'plain-password',
-                email: adminMock.email
-            });
-
-            expect(databaseServiceMock.systemAdmin.findFirst).toHaveBeenCalledWith({
-            where: { email: adminMock.email },
-            select: { id: true, email: true, name: true, password: true }
-            });
-
-            expect(admin_service.comparePassword).toHaveBeenCalledWith(
-            'plain-password',
-            adminMock.password
-            );
-
-            expect(jwtService.signAsync).toHaveBeenCalledWith({
-                id: adminMock.id,
-                email: adminMock.email,
-                name: adminMock.name
-            });
-
-            expect(result).toEqual({ access_token: 'jwt-token' });
-        });
-
-        it('deve retornar erro ao nao encontrar admin', async () => {
-            jest.spyOn(databaseServiceMock.systemAdmin, 'findFirst').mockResolvedValue(null);
-
-            try {
-                await admin_service.authenticate({
-                    password: 'plain-password',
-                    email: 'teste@email.com'
-                });
-            } catch (error) {
-                expect(error).toEqual(new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED));
-            }
-        });
-
-        it('deve retornar erro ao senha invalida', async () => {
-            const adminMock = {
-                id: 'uuid-123',
-                email: 'admin@email.com',
-                name: 'Admin',
-                password: 'hashed-password'
-            };
-
-            jest.spyOn(databaseServiceMock.systemAdmin, 'findFirst').mockResolvedValue(adminMock as any);
-            jest.spyOn(admin_service, 'comparePassword').mockResolvedValue(false);
-
-            try {
-                await admin_service.authenticate({
-                    password: 'wrong-password',
-                    email: adminMock.email
-                });
-            } catch (error) {
-                expect(error).toEqual(new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED));
-            }
-        })
-
-    });
+  });
 });

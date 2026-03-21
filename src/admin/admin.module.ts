@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
-import { DataBaseModule } from 'src/database/database.module';
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
-import { AdminGuard } from './admin.guard';
-import { RbacService } from '../rbac/rbac.service';
+import { Module } from "@nestjs/common";
+import { JwtModule } from "@nestjs/jwt";
+import { ConfigModule } from "@nestjs/config";
+import { DataBaseModule } from "src/database/database.module";
+import { AdminController } from "./admin.controller";
+import { AdminService } from "./admin.service";
+import { AdminGuard } from "./admin.guard";
+import { RbacService } from "../rbac/rbac.service";
 
 @Module({
   imports: [
@@ -14,7 +14,7 @@ import { RbacService } from '../rbac/rbac.service';
     JwtModule.register({
       global: true,
       secret: process.env.SECRET_JWT,
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: "7d" },
     }),
   ],
   exports: [AdminGuard],
