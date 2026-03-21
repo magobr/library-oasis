@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { DataBaseModule } from 'src/database/database.module';
-import { RbacController } from './rbac.controller';
 import { RbacService } from './rbac.service';
 
 @Module({
@@ -18,7 +17,6 @@ import { RbacService } from './rbac.service';
     exports: [
         RbacService
     ],
-    controllers: [RbacController],
     providers: [RbacService, DataBaseModule],
 })
 export class RbacModule {}
