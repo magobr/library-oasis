@@ -1,11 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from './user.service';
-import { DataBaseService } from '../database/database.service';
-import { UserDto } from './dto/user.dto';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { Test, TestingModule } from "@nestjs/testing";
+import { UserService } from "./user.service";
+import { DataBaseService } from "../database/database.service";
+import { UserDto } from "./dto/user.dto";
+import { HttpException, HttpStatus } from "@nestjs/common";
 
-
-describe('User Service', () => {
+describe("User Service", () => {
   let user_service: UserService;
 
   const databaseServiceMock = {
@@ -14,7 +13,7 @@ describe('User Service', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-    }
+    },
   };
 
   beforeEach(async () => {
@@ -25,45 +24,59 @@ describe('User Service', () => {
         {
           provide: DataBaseService,
           useValue: databaseServiceMock,
-        }
+        },
       ],
     }).compile();
 
     user_service = module.get<UserService>(UserService);
   });
 
-  describe('Find User', () => {
-    it('Deve retornar sucesso na busca', async () => {
+  describe("Find User", () => {
+    it("Deve retornar sucesso na busca", async () => {
       const user: UserDto = {
-        id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-        email:"thiago@email.com",
-        name:"Thiago Novaes",
-        createdAt: new Date("2026-01-12T02:16:27.546Z")
-      }
+        id: "3caeba63-22ef-482d-96a9-e37b940b5177",
+        email: "thiago@email.com",
+        name: "Thiago Novaes",
+        createdAt: new Date("2026-01-12T02:16:27.546Z"),
+      };
 
       databaseServiceMock.user.findUnique.mockReturnValue(user);
 
-      const result = await user_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
+      const result = await user_service.find(
+        "3caeba63-22ef-482d-96a9-e37b940b5177",
+      );
 
       expect(result).toEqual(user);
 
-      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({"where": {"id": "3caeba63-22ef-482d-96a9-e37b940b5177"}});
+      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({
+        where: { id: "3caeba63-22ef-482d-96a9-e37b940b5177" },
+      });
     });
 
-    it('Deve retornar erro na busca', async () => {
-      const exception = new HttpException('User not found', HttpStatus.NOT_FOUND)
+    it("Deve retornar erro na busca", async () => {
+      const exception = new HttpException(
+        "User not found",
+        HttpStatus.NOT_FOUND,
+      );
 
       databaseServiceMock.user.findUnique.mockReturnValue(exception);
 
-      const result = await user_service.find("3caeba63-22ef-482d-96a9-e37b940b5177");
+      const result = await user_service.find(
+        "3caeba63-22ef-482d-96a9-e37b940b5177",
+      );
 
       expect(result).toEqual(exception);
 
-      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({"where": {"id": "3caeba63-22ef-482d-96a9-e37b940b5177"}});
+      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({
+        where: { id: "3caeba63-22ef-482d-96a9-e37b940b5177" },
+      });
     });
 
-    it('Deve retornar erro quando o id não estiver no formato UUID', async () => {
-      const exception = new HttpException('User not found', HttpStatus.INTERNAL_SERVER_ERROR)
+    it("Deve retornar erro quando o id não estiver no formato UUID", async () => {
+      const exception = new HttpException(
+        "User not found",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
 
       databaseServiceMock.user.findUnique.mockReturnValue(exception);
 
@@ -71,23 +84,25 @@ describe('User Service', () => {
 
       expect(result).toEqual(exception);
 
-      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({"where": {"id": "12345"}});
+      expect(databaseServiceMock.user.findUnique).toHaveBeenCalledWith({
+        where: { id: "12345" },
+      });
     });
   });
 
-  describe('Create User', () => {
-    it('Deve retornar sucesso na criacao', async () => {
+  describe("Create User", () => {
+    it("Deve retornar sucesso na criacao", async () => {
       const user: UserDto = {
-        id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-        email:"thiago@email.com",
-        name:"Thiago Novaes",
-        createdAt: new Date("2026-01-12T02:16:27.546Z")
-      }
+        id: "3caeba63-22ef-482d-96a9-e37b940b5177",
+        email: "thiago@email.com",
+        name: "Thiago Novaes",
+        createdAt: new Date("2026-01-12T02:16:27.546Z"),
+      };
 
       databaseServiceMock.user.create = jest.fn().mockReturnValue(user);
       const result = await user_service.create({
         email: "thiago@email.com",
-        name: "Thiago Novaes"
+        name: "Thiago Novaes",
       });
 
       expect(result).toEqual(user);
@@ -95,40 +110,45 @@ describe('User Service', () => {
       expect(databaseServiceMock.user.create).toHaveBeenCalledWith({
         data: {
           email: "thiago@email.com",
-          name: "Thiago Novaes"
-        }
+          name: "Thiago Novaes",
+        },
       });
     });
 
-    it('Deve retornar erro de email duplicado na criacao', async () => {
-      const exception = new HttpException('Email already in use', HttpStatus.CONFLICT);
+    it("Deve retornar erro de email duplicado na criacao", async () => {
+      const exception = new HttpException(
+        "Email already in use",
+        HttpStatus.CONFLICT,
+      );
 
       databaseServiceMock.user.create = jest.fn().mockImplementation(() => {
         const error: any = new Error();
-        error.code = 'P2002';
+        error.code = "P2002";
         throw error;
       });
-
 
       try {
         await user_service.create({
           email: "thiago@email.com",
-          name: "Thiago Novaes"
-        }); 
+          name: "Thiago Novaes",
+        });
       } catch (error) {
-        expect(error).toEqual(exception);  
+        expect(error).toEqual(exception);
       }
 
       expect(databaseServiceMock.user.create).toHaveBeenCalledWith({
         data: {
           email: "thiago@email.com",
-          name: "Thiago Novaes"
-        }
+          name: "Thiago Novaes",
+        },
       });
     });
 
-    it('Deve retornar erro generico na criacao', async () => {
-      const exception = new HttpException('Error creating user', HttpStatus.INTERNAL_SERVER_ERROR);
+    it("Deve retornar erro generico na criacao", async () => {
+      const exception = new HttpException(
+        "Error creating user",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
 
       databaseServiceMock.user.create = jest.fn().mockImplementation(() => {
         throw new Error();
@@ -137,34 +157,37 @@ describe('User Service', () => {
       try {
         await user_service.create({
           email: "thiago@email.com",
-          name: "Thiago Novaes"
-        }); 
+          name: "Thiago Novaes",
+        });
       } catch (error) {
-        expect(error).toEqual(exception);  
+        expect(error).toEqual(exception);
       }
 
       expect(databaseServiceMock.user.create).toHaveBeenCalledWith({
         data: {
           email: "thiago@email.com",
-          name: "Thiago Novaes"
-        }
+          name: "Thiago Novaes",
+        },
       });
     });
   });
 
-  describe('Update User', () => {
-    it('Deve retornar sucesso na atualizacao', async () => {
+  describe("Update User", () => {
+    it("Deve retornar sucesso na atualizacao", async () => {
       const user: UserDto = {
-        id:"3caeba63-22ef-482d-96a9-e37b940b5177",
-        email:"teste@teste.com",
-        name:"Teste Atualizado",
-        createdAt: new Date("2026-01-12T02:16:27.546Z")
-      }
+        id: "3caeba63-22ef-482d-96a9-e37b940b5177",
+        email: "teste@teste.com",
+        name: "Teste Atualizado",
+        createdAt: new Date("2026-01-12T02:16:27.546Z"),
+      };
 
       databaseServiceMock.user.update = jest.fn().mockReturnValue(user);
-      const result = await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-        name: "Teste Atualizado"
-      });
+      const result = await user_service.update(
+        "3caeba63-22ef-482d-96a9-e37b940b5177",
+        {
+          name: "Teste Atualizado",
+        },
+      );
 
       expect(result).toEqual(user);
 
@@ -173,26 +196,29 @@ describe('User Service', () => {
           id: "3caeba63-22ef-482d-96a9-e37b940b5177",
         },
         data: {
-          name: "Teste Atualizado"
-        }
+          name: "Teste Atualizado",
+        },
       });
     });
 
-    it('Deve retornar erro de usuario nao encontrado na atualizacao', async () => {
-      const exception = new HttpException('User not found', HttpStatus.NOT_FOUND);
+    it("Deve retornar erro de usuario nao encontrado na atualizacao", async () => {
+      const exception = new HttpException(
+        "User not found",
+        HttpStatus.NOT_FOUND,
+      );
 
       databaseServiceMock.user.update = jest.fn().mockImplementation(() => {
         const error: any = new Error();
-        error.code = 'P2025';
+        error.code = "P2025";
         throw error;
       });
 
       try {
         await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-          name: "Teste Atualizado"
-        }); 
+          name: "Teste Atualizado",
+        });
       } catch (error) {
-        expect(error).toEqual(exception);  
+        expect(error).toEqual(exception);
       }
 
       expect(databaseServiceMock.user.update).toHaveBeenCalledWith({
@@ -200,13 +226,16 @@ describe('User Service', () => {
           id: "3caeba63-22ef-482d-96a9-e37b940b5177",
         },
         data: {
-          name: "Teste Atualizado"
-        }
+          name: "Teste Atualizado",
+        },
       });
     });
 
-    it('Deve retornar erro generico na atualizacao', async () => {
-      const exception = new HttpException('Error updating user', HttpStatus.INTERNAL_SERVER_ERROR);
+    it("Deve retornar erro generico na atualizacao", async () => {
+      const exception = new HttpException(
+        "Error updating user",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
 
       databaseServiceMock.user.update = jest.fn().mockImplementation(() => {
         throw new Error();
@@ -214,10 +243,10 @@ describe('User Service', () => {
 
       try {
         await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-          name: "Teste Atualizado"
-        }); 
+          name: "Teste Atualizado",
+        });
       } catch (error) {
-        expect(error).toEqual(exception);  
+        expect(error).toEqual(exception);
       }
 
       expect(databaseServiceMock.user.update).toHaveBeenCalledWith({
@@ -225,69 +254,78 @@ describe('User Service', () => {
           id: "3caeba63-22ef-482d-96a9-e37b940b5177",
         },
         data: {
-          name: "Teste Atualizado"
-        }
+          name: "Teste Atualizado",
+        },
       });
     });
   });
 
-  describe('Delete User', () => {
-    it('Deve retornar sucesso na exclusao', async () =>{
-      const returnMessage = { message: 'User deleted successfully' };
+  describe("Delete User", () => {
+    it("Deve retornar sucesso na exclusao", async () => {
+      const returnMessage = { message: "User deleted successfully" };
 
-      databaseServiceMock.user.delete = jest.fn().mockReturnValue(returnMessage);
-      const result = await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
+      databaseServiceMock.user.delete = jest
+        .fn()
+        .mockReturnValue(returnMessage);
+      const result = await user_service.delete(
+        "3caeba63-22ef-482d-96a9-e37b940b5177",
+      );
 
       expect(result).toEqual(returnMessage);
 
       expect(databaseServiceMock.user.delete).toHaveBeenCalledWith({
         where: {
           id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        }
+        },
       });
     });
 
-    it('Deve retornar erro por usuario nao encontrado na exclusao', async () =>{
-      const returnMessage = new HttpException('User not found', HttpStatus.NOT_FOUND);
+    it("Deve retornar erro por usuario nao encontrado na exclusao", async () => {
+      const returnMessage = new HttpException(
+        "User not found",
+        HttpStatus.NOT_FOUND,
+      );
 
-      databaseServiceMock.user.delete = jest.fn().mockImplementation(() =>{
+      databaseServiceMock.user.delete = jest.fn().mockImplementation(() => {
         const error: any = new Error();
-        error.code = 'P2025';
+        error.code = "P2025";
         throw error;
       });
 
       try {
-        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");  
+        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
       } catch (error) {
-        expect(error).toEqual(returnMessage); 
+        expect(error).toEqual(returnMessage);
       }
-      
+
       expect(databaseServiceMock.user.delete).toHaveBeenCalledWith({
         where: {
           id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        }
+        },
       });
     });
 
-    it('Deve retornar erro generico na exclusao', async () =>{
-      const returnMessage = new HttpException('Error deleting user', HttpStatus.INTERNAL_SERVER_ERROR);
+    it("Deve retornar erro generico na exclusao", async () => {
+      const returnMessage = new HttpException(
+        "Error deleting user",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
 
-      databaseServiceMock.user.delete = jest.fn().mockImplementation(() =>{
+      databaseServiceMock.user.delete = jest.fn().mockImplementation(() => {
         throw new Error();
       });
 
       try {
-        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");  
+        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
       } catch (error) {
-        expect(error).toEqual(returnMessage); 
+        expect(error).toEqual(returnMessage);
       }
 
       expect(databaseServiceMock.user.delete).toHaveBeenCalledWith({
         where: {
           id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        }
+        },
       });
     });
-  })
-
+  });
 });
