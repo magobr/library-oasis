@@ -262,6 +262,38 @@ export class RbacService {
     return roles_admin;
   }
 
+  async getRole(role_id: UUID): Promise<ResponseRoleTypeRbacDto | null> {
+    const role = await this.databaseService.roleTypes.findUnique({
+      where: {
+        id: role_id,
+      },
+    });
+
+    console.log(role);
+
+    return role;
+  }
+
+  async isReadRole(role_id: UUID): Promise<boolean> {
+    const role = await this.getRole(role_id);
+    return role?.read ?? false;
+  }
+
+  async isUpdateRole(role_id: UUID): Promise<boolean> {
+    const role = await this.getRole(role_id);
+    return role?.update ?? false;
+  }
+
+  async isDeleteRole(role_id: UUID): Promise<boolean> {
+    const role = await this.getRole(role_id);
+    return role?.delete ?? false;
+  }
+
+  async isCreateRole(role_id: UUID): Promise<boolean> {
+    const role = await this.getRole(role_id);
+    return role?.create ?? false;
+  }
+
   verifyTokenSync(token: string) {
     const payload: JwtPayload = this.jwtService.verify(token, {
       secret: process.env.JWT_SECRET,

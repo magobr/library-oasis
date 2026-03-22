@@ -1,14 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { Prisma } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { UUID } from "crypto";
 import { RbacService } from "../rbac/rbac.service";
 import { DataBaseService } from "../database/database.service";
-import { AdminDto } from "./dto/admin.dto";
+import { AdminDto, AdminTokenDto } from "./dto/admin.dto";
 import { CreateAdminDto } from "./dto/create-admin.dto";
 import { UpdateAdminDto } from "./dto/update-admin.dto";
 import { AuthAdminDto } from "./dto/auth-admin.dto";
-import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class AdminService {
@@ -18,8 +18,20 @@ export class AdminService {
     private jwtService: JwtService,
   ) {}
 
-  async find(id: UUID): Promise<AdminDto> {
+  async find(admin_token: AdminTokenDto, id: UUID): Promise<AdminDto> {
     try {
+      if (!admin_token) {
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+      }
+
+      const admin_role: boolean | null = await this.rbacService.isReadRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (!admin_role) {
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+      }
+
       const admin = await this.databaseService.systemAdmin.findUnique({
         where: { id: id },
       });
@@ -226,7 +238,6 @@ export class AdminService {
       id: admin.id,
       email: admin.email,
       name: admin.name,
-      role: admin.roles[0].id,
       roleType: admin.roles[0].roleType.id,
     };
 

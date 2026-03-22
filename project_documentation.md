@@ -35,7 +35,7 @@
 
 - [x] Testes de integração
 - [x] Implementar guard Admin para todas as rotas
-- [X] Implementar criação de roles iniciais no cadastro de admin
+- [x] Implementar criação de roles iniciais no cadastro de admin
 
 ### Módulo de Roles
 
@@ -43,9 +43,9 @@
 
 - [x] Método para criar permições iniciais
 - [x] Método para editar permições
-- [X] Método para buscar role
+- [x] Método para buscar role
 - [x] Atualizar ENUM UserRole adicionando o valor BOOKS
-- [ ] Criar e implementar midleware para verificar o tipo de permissão
+- [x] Criar e implementar midleware para verificar o tipo de permissão
 
 ### Módulo de Livros
 
@@ -75,3 +75,8 @@
 
 - Responsável por gerenciar as permições dos Admins
 - Módulo interno
+
+### Melhorias Gerais
+
+- Revisão de todos os testes depois de implementar o módulo RBAC.
+- Revisão de algumas funções, garantir que esteja implementado da melhor maneira possivel, sem tratamentos e checagens desnecessárias.
