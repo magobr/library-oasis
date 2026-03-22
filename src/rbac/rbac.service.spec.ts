@@ -6,6 +6,7 @@ import { JwtService } from "@nestjs/jwt";
 import { Roles } from "@prisma/client";
 import { InsertRoleRbacDto, RoleName } from "./dto/insert_role-rbac.dto";
 import { VerifyRoleRbacDto } from "./dto/verify_roles-rbac.dto";
+import { UpdateRoleRbacDto } from "./dto/update_role-rbac.dto";
 
 describe("RbacService", () => {
   let service: RbacService;
@@ -174,9 +175,9 @@ describe("RbacService", () => {
 
       jest.spyOn(service, "verifyRoles").mockResolvedValue(null);
 
-      await expect(service.updateRoeles({} as any, "token")).rejects.toThrow(
-        "No roles found for this admin",
-      );
+      await expect(
+        service.updateRoeles({} as UpdateRoleRbacDto, "token"),
+      ).rejects.toThrow("No roles found for this admin");
     });
   });
 

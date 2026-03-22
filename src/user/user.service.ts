@@ -1,13 +1,14 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { UUID } from 'crypto';
-import { DataBaseService } from '../database/database.service';
-import { UserDto } from './dto/user.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { UUID } from "crypto";
+import { DataBaseService } from "../database/database.service";
+import { UserDto } from "./dto/user.dto";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class UserService {
-  constructor(private readonly databaseService: DataBaseService){}
+  constructor(private readonly databaseService: DataBaseService) {}
 
   async find(id: UUID): Promise<UserDto> {
     try {
@@ -17,19 +18,21 @@ export class UserService {
         },
       });
 
-      if (typeof search_user !== 'object' || search_user === null) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-      } 
-      
-      return search_user;
-      
-    } catch(e) {
-      if (e.status === HttpStatus.NOT_FOUND) {
-        return e;
+      if (typeof search_user !== "object" || search_user === null) {
+        throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
-      throw new HttpException('Error find user', HttpStatus.INTERNAL_SERVER_ERROR);
-    } 
+      return search_user;
+    } catch (e) {
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        "Internal server error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async create(user: CreateUserDto): Promise<UserDto> {
@@ -41,12 +44,17 @@ export class UserService {
       });
       return new_user;
     } catch (e) {
-
-      if(e.code === 'P2002') {
-        throw new HttpException('Email already in use', HttpStatus.CONFLICT);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new HttpException("Email already in use", HttpStatus.CONFLICT);
       }
 
-      throw new HttpException('Error creating user', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        "Internal server error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -62,30 +70,41 @@ export class UserService {
       });
       return updated_user;
     } catch (e) {
-
-      if(e.code === 'P2025') {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
+        throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
-      throw new HttpException('Error updating user', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        "Internal server error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async delete(id: UUID): Promise<{message: string}> {
+  async delete(id: UUID): Promise<{ message: string }> {
     try {
-      const result = await this.databaseService.user.delete({
+      await this.databaseService.user.delete({
         where: { id: id },
-      })
-      
+      });
+
       return {
-        message: 'User deleted successfully'
-      }
+        message: "User deleted successfully",
+      };
     } catch (e) {
-      if(e.code === 'P2025') {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
+        throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
-      throw new HttpException('Error deleting user', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        "Internal server error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
