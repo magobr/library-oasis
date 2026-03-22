@@ -29,8 +29,7 @@ export class AdminGuard implements CanActivate {
       await this.jwtService.verifyAsync(user_token, {
         secret: process.env.SECRET_JWT,
       });
-    } catch (e) {
-      console.error(e);
+    } catch {
       throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
     }
     return true;

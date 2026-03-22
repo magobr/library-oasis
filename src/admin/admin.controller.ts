@@ -7,19 +7,23 @@ import {
   Put,
   Delete,
 } from "@nestjs/common";
-import { AdminService } from "./admin.service";
 import * as crypto from "crypto";
+import { AdminService } from "./admin.service";
+import { AdminToken } from "./admin.decorator";
 import { CreateAdminDto } from "./dto/create-admin.dto";
 import { UpdateAdminDto } from "./dto/update-admin.dto";
+import { AdminGuard } from "./admin.guard";
+import { UseGuards } from "@nestjs/common";
+import { AdminTokenDto } from "./dto/admin.dto";
 
-// @UseGuards(AdminGuard)
 @Controller("admin")
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @UseGuards(AdminGuard)
   @Get(":id")
-  getAdmin(@Param("id") id: crypto.UUID) {
-    return this.adminService.find(id);
+  getAdmin(@AdminToken() admin: AdminTokenDto, @Param("id") id: crypto.UUID) {
+    return this.adminService.find(admin, id);
   }
 
   @Post()

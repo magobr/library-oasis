@@ -1,4 +1,16 @@
-import { Exclude, Expose } from "class-transformer";
+import {
+  IsEmail,
+  IsString,
+  IsUUID,
+  IsNumber,
+  ValidateNested,
+} from "class-validator";
+import { Expose } from "class-transformer";
+
+class RoleTypeDto {
+  @IsUUID()
+  id: string;
+}
 
 export class AdminDto {
   @Expose()
@@ -12,4 +24,24 @@ export class AdminDto {
 
   @Expose()
   createdAt: Date | null;
+}
+
+export class AdminTokenDto {
+  @IsUUID()
+  id: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  name: string;
+
+  @ValidateNested()
+  roleType: RoleTypeDto;
+
+  @IsNumber()
+  iat: number;
+
+  @IsNumber()
+  exp: number;
 }
