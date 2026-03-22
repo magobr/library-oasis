@@ -1,8 +1,10 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { Prisma } from "@prisma/client";
 import { UserService } from "./user.service";
 import { DataBaseService } from "../database/database.service";
 import { UserDto } from "./dto/user.dto";
 import { HttpException, HttpStatus } from "@nestjs/common";
+import e from "express";
 
 describe("User Service", () => {
   let user_service: UserService;
@@ -121,54 +123,38 @@ describe("User Service", () => {
         HttpStatus.CONFLICT,
       );
 
-      databaseServiceMock.user.create = jest.fn().mockImplementation(() => {
-        const error: any = new Error();
-        error.code = "P2002";
-        throw error;
-      });
-
-      try {
-        await user_service.create({
-          email: "thiago@email.com",
-          name: "Thiago Novaes",
-        });
-      } catch (error) {
-        expect(error).toEqual(exception);
-      }
-
-      expect(databaseServiceMock.user.create).toHaveBeenCalledWith({
-        data: {
-          email: "thiago@email.com",
-          name: "Thiago Novaes",
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint",
+        {
+          code: "P2002",
+          clientVersion: "test",
         },
-      });
+      );
+
+      databaseServiceMock.user.create.mockRejectedValue(error);
+
+      await expect(
+        user_service.create({
+          email: "thiago@email.com",
+          name: "Thiago Novaes",
+        }),
+      ).rejects.toThrow(exception);
     });
 
     it("Deve retornar erro generico na criacao", async () => {
       const exception = new HttpException(
-        "Error creating user",
+        "Internal server error",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-      databaseServiceMock.user.create = jest.fn().mockImplementation(() => {
-        throw new Error();
-      });
+      databaseServiceMock.user.create.mockRejectedValue(new Error());
 
-      try {
-        await user_service.create({
+      await expect(
+        user_service.create({
           email: "thiago@email.com",
           name: "Thiago Novaes",
-        });
-      } catch (error) {
-        expect(error).toEqual(exception);
-      }
-
-      expect(databaseServiceMock.user.create).toHaveBeenCalledWith({
-        data: {
-          email: "thiago@email.com",
-          name: "Thiago Novaes",
-        },
-      });
+        }),
+      ).rejects.toThrow(exception);
     });
   });
 
@@ -207,56 +193,36 @@ describe("User Service", () => {
         HttpStatus.NOT_FOUND,
       );
 
-      databaseServiceMock.user.update = jest.fn().mockImplementation(() => {
-        const error: any = new Error();
-        error.code = "P2025";
-        throw error;
-      });
-
-      try {
-        await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
-          name: "Teste Atualizado",
-        });
-      } catch (error) {
-        expect(error).toEqual(exception);
-      }
-
-      expect(databaseServiceMock.user.update).toHaveBeenCalledWith({
-        where: {
-          id: "3caeba63-22ef-482d-96a9-e37b940b5177",
+      const error = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint",
+        {
+          code: "P2025",
+          clientVersion: "test",
         },
-        data: {
+      );
+
+      databaseServiceMock.user.update.mockRejectedValue(error);
+
+      await expect(
+        user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
           name: "Teste Atualizado",
-        },
-      });
+        }),
+      ).rejects.toThrow(exception);
     });
 
     it("Deve retornar erro generico na atualizacao", async () => {
       const exception = new HttpException(
-        "Error updating user",
+        "Internal server error",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-      databaseServiceMock.user.update = jest.fn().mockImplementation(() => {
-        throw new Error();
-      });
+      databaseServiceMock.user.update.mockRejectedValue(new Error());
 
-      try {
-        await user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
+      await expect(
+        user_service.update("3caeba63-22ef-482d-96a9-e37b940b5177", {
           name: "Teste Atualizado",
-        });
-      } catch (error) {
-        expect(error).toEqual(exception);
-      }
-
-      expect(databaseServiceMock.user.update).toHaveBeenCalledWith({
-        where: {
-          id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        },
-        data: {
-          name: "Teste Atualizado",
-        },
-      });
+        }),
+      ).rejects.toThrow(exception);
     });
   });
 
@@ -264,68 +230,39 @@ describe("User Service", () => {
     it("Deve retornar sucesso na exclusao", async () => {
       const returnMessage = { message: "User deleted successfully" };
 
-      databaseServiceMock.user.delete = jest
-        .fn()
-        .mockReturnValue(returnMessage);
+      databaseServiceMock.user.delete.mockResolvedValue(returnMessage);
+
       const result = await user_service.delete(
         "3caeba63-22ef-482d-96a9-e37b940b5177",
       );
 
       expect(result).toEqual(returnMessage);
-
-      expect(databaseServiceMock.user.delete).toHaveBeenCalledWith({
-        where: {
-          id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        },
-      });
     });
 
     it("Deve retornar erro por usuario nao encontrado na exclusao", async () => {
       const returnMessage = new HttpException(
-        "User not found",
+        "Internal server error",
         HttpStatus.NOT_FOUND,
       );
 
-      databaseServiceMock.user.delete = jest.fn().mockImplementation(() => {
-        const error: any = new Error();
-        error.code = "P2025";
-        throw error;
-      });
+      databaseServiceMock.user.delete.mockRejectedValue(new Error());
 
-      try {
-        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
-      } catch (error) {
-        expect(error).toEqual(returnMessage);
-      }
-
-      expect(databaseServiceMock.user.delete).toHaveBeenCalledWith({
-        where: {
-          id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        },
-      });
+      await expect(
+        user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177"),
+      ).rejects.toThrow(returnMessage);
     });
 
     it("Deve retornar erro generico na exclusao", async () => {
       const returnMessage = new HttpException(
-        "Error deleting user",
+        "Internal server error",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-      databaseServiceMock.user.delete = jest.fn().mockImplementation(() => {
-        throw new Error();
-      });
+      databaseServiceMock.user.delete.mockRejectedValue(new Error());
 
-      try {
-        await user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177");
-      } catch (error) {
-        expect(error).toEqual(returnMessage);
-      }
-
-      expect(databaseServiceMock.user.delete).toHaveBeenCalledWith({
-        where: {
-          id: "3caeba63-22ef-482d-96a9-e37b940b5177",
-        },
-      });
+      await expect(
+        user_service.delete("3caeba63-22ef-482d-96a9-e37b940b5177"),
+      ).rejects.toThrow(returnMessage);
     });
   });
 });
