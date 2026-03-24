@@ -24,11 +24,11 @@ export class AdminService {
         throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
       }
 
-      const admin_role: boolean | null = await this.rbacService.isReadRole(
+      const role_read: boolean | null = await this.rbacService.isReadRole(
         admin_token.roleType.id as UUID,
       );
 
-      if (!admin_role) {
+      if (!role_read) {
         throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
       }
 
@@ -58,13 +58,27 @@ export class AdminService {
     }
   }
 
-  async create(admin: CreateAdminDto): Promise<AdminDto> {
+  async create(
+    admin_token: AdminTokenDto,
+    data_admin: CreateAdminDto,
+  ): Promise<AdminDto> {
     try {
-      const hash_password = await this.hashPassword(admin.password);
+      if (!admin_token) {
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+      }
+
+      const role_create: boolean | null = await this.rbacService.isCreateRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (role_create === null || !role_create)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
+      const hash_password = await this.hashPassword(data_admin.password);
       const new_admin = await this.databaseService.systemAdmin.create({
         data: {
-          email: admin.email,
-          name: admin.name,
+          email: data_admin.email,
+          name: data_admin.name,
           password: hash_password,
         },
       });
@@ -103,8 +117,23 @@ export class AdminService {
     }
   }
 
-  async update(id: UUID, admin: UpdateAdminDto): Promise<AdminDto> {
+  async update(
+    admin_token: AdminTokenDto,
+    id: UUID,
+    admin: UpdateAdminDto,
+  ): Promise<AdminDto> {
     try {
+      if (!admin_token) {
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+      }
+
+      const role_update: boolean | null = await this.rbacService.isUpdateRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (role_update === null || !role_update)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
       let hash_password: string;
 
       if (admin.password) {
@@ -159,8 +188,22 @@ export class AdminService {
     }
   }
 
-  async delete(id: UUID): Promise<{ message: string }> {
+  async delete(
+    admin_token: AdminTokenDto,
+    id: UUID,
+  ): Promise<{ message: string }> {
     try {
+      if (!admin_token) {
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+      }
+
+      const role_delete: boolean | null = await this.rbacService.isDeleteRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (role_delete === null || !role_delete)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
       await this.rbacService.deleteRoles(id);
 
       await this.databaseService.systemAdmin.delete({

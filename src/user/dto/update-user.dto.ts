@@ -1,12 +1,12 @@
-import { IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsEmail({}, {message: 'Invalid email format'})
+  @IsEmail({}, { message: "Invalid email format" })
   email?: string;
 
   @IsOptional()
-  @IsString({message: 'Name must be a string'})
-  @MaxLength(100, {message: 'Name must be at most 100 characters'})
+  @IsString({ message: "Name must be a string" })
+  @MaxLength(100, { message: "Name must be at most 100 characters" })
   name?: string;
 }

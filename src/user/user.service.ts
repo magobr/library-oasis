@@ -5,13 +5,28 @@ import { UserDto } from "./dto/user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { Prisma } from "@prisma/client";
+import { AdminTokenDto } from "../admin/dto/admin.dto";
+import { RbacService } from "../rbac/rbac.service";
 
 @Injectable()
 export class UserService {
-  constructor(private readonly databaseService: DataBaseService) {}
+  constructor(
+    private readonly databaseService: DataBaseService,
+    private readonly rbacService: RbacService,
+  ) {}
 
-  async find(id: UUID): Promise<UserDto> {
+  async find(admin_token: AdminTokenDto, id: UUID): Promise<UserDto> {
     try {
+      if (!admin_token)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
+      const role_read = await this.rbacService.isReadRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (!role_read)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
       const search_user = await this.databaseService.user.findUnique({
         where: {
           id: id,
@@ -35,8 +50,21 @@ export class UserService {
     }
   }
 
-  async create(user: CreateUserDto): Promise<UserDto> {
+  async create(
+    admin_token: AdminTokenDto,
+    user: CreateUserDto,
+  ): Promise<UserDto> {
     try {
+      if (!admin_token)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
+      const role_create = await this.rbacService.isCreateRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (!role_create)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
       const new_user = await this.databaseService.user.create({
         data: {
           ...user,
@@ -58,8 +86,19 @@ export class UserService {
     }
   }
 
-  async update(id: UUID, user: UpdateUserDto): Promise<UserDto> {
+  async update(
+    admin_token: AdminTokenDto,
+    id: UUID,
+    user: UpdateUserDto,
+  ): Promise<UserDto> {
     try {
+      const role_update = await this.rbacService.isUpdateRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (!role_update)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
       const updated_user = await this.databaseService.user.update({
         where: {
           id: id,
@@ -84,8 +123,18 @@ export class UserService {
     }
   }
 
-  async delete(id: UUID): Promise<{ message: string }> {
+  async delete(
+    admin_token: AdminTokenDto,
+    id: UUID,
+  ): Promise<{ message: string }> {
     try {
+      const role_delete = await this.rbacService.isDeleteRole(
+        admin_token.roleType.id as UUID,
+      );
+
+      if (!role_delete)
+        throw new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED);
+
       await this.databaseService.user.delete({
         where: { id: id },
       });
