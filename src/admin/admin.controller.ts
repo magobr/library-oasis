@@ -22,26 +22,36 @@ export class AdminController {
 
   @UseGuards(AdminGuard)
   @Get(":id")
-  getAdmin(@AdminToken() admin: AdminTokenDto, @Param("id") id: crypto.UUID) {
-    return this.adminService.find(admin, id);
+  getAdmin(
+    @AdminToken() admin_token: AdminTokenDto,
+    @Param("id") id: crypto.UUID,
+  ) {
+    return this.adminService.find(admin_token, id);
   }
 
   @Post()
-  async createAdmin(@Body() new_admin: CreateAdminDto) {
-    return await this.adminService.create(new_admin);
+  async createAdmin(
+    @AdminToken() admin_token: AdminTokenDto,
+    @Body() new_admin: CreateAdminDto,
+  ) {
+    return await this.adminService.create(admin_token, new_admin);
   }
 
   @Put(":id")
   async updateAdmin(
+    @AdminToken() admin_token: AdminTokenDto,
     @Param("id") id: crypto.UUID,
     @Body() updated_admin: UpdateAdminDto,
   ) {
-    return await this.adminService.update(id, updated_admin);
+    return await this.adminService.update(admin_token, id, updated_admin);
   }
 
   @Delete(":id")
-  async deleteAdmin(@Param("id") id: crypto.UUID) {
-    return await this.adminService.delete(id);
+  async deleteAdmin(
+    @AdminToken() admin_token: AdminTokenDto,
+    @Param("id") id: crypto.UUID,
+  ) {
+    return await this.adminService.delete(admin_token, id);
   }
 
   @Post("auth")

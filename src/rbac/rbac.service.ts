@@ -268,9 +268,6 @@ export class RbacService {
         id: role_id,
       },
     });
-
-    console.log(role);
-
     return role;
   }
 
