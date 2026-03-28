@@ -1,11 +1,11 @@
 # Requisitos
 
 1. Código sustentável
-    - Controller fino
-    - Regra de negócio em services
-    - Repositórios bem definidos
-    - Testes unitários e de integração
-    - Padrões claros (DTOs, interfaces)
+   - Controller fino
+   - Regra de negócio em services
+   - Repositórios bem definidos
+   - Testes unitários e de integração
+   - Padrões claros (DTOs, interfaces)
 
 2. Resolucao de problemas
 
@@ -41,6 +41,7 @@
 
 **Módulo responsável por gerenciar as permições dos admins:**
 
+- [ ] Testes de integração
 - [x] Método para criar permições iniciais
 - [x] Método para editar permições
 - [x] Método para buscar role
@@ -51,9 +52,20 @@
 
 **Módulo responsável por adiconar e quantificar os livros do acervo:**
 
-- [ ] Método para adicionar um novo livro ao acervo
-- [ ] Método para remover um novo livro do acervo
-- [ ] Método para atualizar os livros do acervo
+- [ ] Testes de integração
+- [x] Método para adicionar um novo livro ao acervo
+- [x] Método para remover um novo livro do acervo
+- [x] Método para atualizar os livros do acervo
+- [x] Adicionar permissão de leitura e escrita devido
+- [ ] Regra de negócio: No método de adicionar livro, se o livro já existir, adicionar +1 a contagem
+
+---
+
+## Melhorias de código
+
+**DTO's** 
+
+- [ ] Padronizar nomenclaturas (Arquivos, classes e variaveis em comun)
 
 ---
 
@@ -69,12 +81,17 @@
 - Responsavel por criar, alterar e deletar SystemAdmins, desenvolvido com testes e código sustentável
 - Guard Responsável por atribuir dependencia de token de autenticação
 - Terá uma dependencia de token de authenticacao de SystemAdmin
-- Terá um usuario padrão com permissão de apenas adicionar novos usuários
+- Terá dependencia de permissão para executar os métodos, dependendo do tipo, não poderá executar tal ação
 
 ### RBAC
 
 - Responsável por gerenciar as permições dos Admins
 - Módulo interno
+
+### BooksModule
+- Responsavel por criar, alterar e deletar livros, desenvolvido com testes e código sustentável
+- Terá dependencia de token de authenticacao de SystemAdmin
+- Terá dependencia de permissão para executar os métodos, dependendo do tipo, não poderá executar tal ação
 
 ### Melhorias Gerais
 

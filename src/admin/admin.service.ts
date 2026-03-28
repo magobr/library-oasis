@@ -281,7 +281,7 @@ export class AdminService {
       id: admin.id,
       email: admin.email,
       name: admin.name,
-      roleType: admin.roles[0].roleType.id,
+      roleType: admin.roles[0].roleType,
     };
 
     const access_token = await this.jwtService.signAsync(payload);
