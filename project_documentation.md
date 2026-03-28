@@ -1,11 +1,11 @@
 # Requisitos
 
 1. Código sustentável
-    - Controller fino
-    - Regra de negócio em services
-    - Repositórios bem definidos
-    - Testes unitários e de integração
-    - Padrões claros (DTOs, interfaces)
+   - Controller fino
+   - Regra de negócio em services
+   - Repositórios bem definidos
+   - Testes unitários e de integração
+   - Padrões claros (DTOs, interfaces)
 
 2. Resolucao de problemas
 
@@ -54,6 +54,13 @@
 - [ ] Método para adicionar um novo livro ao acervo
 - [ ] Método para remover um novo livro do acervo
 - [ ] Método para atualizar os livros do acervo
+- [ ] Adicionar permissão de leitura e escrita devido
+
+---
+
+## Melhorias de código
+
+**Em breve**
 
 ---
 
