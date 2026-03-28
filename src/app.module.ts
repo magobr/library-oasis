@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { UsersModule } from './user/user.module';
-import { ConfigModule } from '@nestjs/config';
-import { AdminModule } from './admin/admin.module';
-import { RbacModule } from './rbac/rbac.module';
+import { Module } from "@nestjs/common";
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
+import { UsersModule } from "./user/user.module";
+import { ConfigModule } from "@nestjs/config";
+import { AdminModule } from "./admin/admin.module";
+import { RbacModule } from "./rbac/rbac.module";
+import { BooksModule } from "./books/books.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RbacModule } from './rbac/rbac.module';
       isGlobal: true,
     }),
     RbacModule,
+    BooksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
