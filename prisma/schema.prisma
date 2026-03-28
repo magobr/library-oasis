@@ -6,64 +6,65 @@ datasource db {
   provider = "postgresql"
 }
 
-model SystemAdmin{
-  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email String  @unique
-  name  String
-  password String
+model SystemAdmin {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  name      String
+  password  String
   createdAt DateTime @default(now())
-  roles Roles[]
+  roles     Roles[]
 }
 
 model Roles {
-  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type_id String @db.Uuid
-  roleType RoleTypes @relation(fields: [type_id], references: [id])
-  admin_id String @db.Uuid
-  admin SystemAdmin @relation(fields: [admin_id], references: [id])
+  id       String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type_id  String      @db.Uuid
+  roleType RoleTypes   @relation(fields: [type_id], references: [id])
+  admin_id String      @db.Uuid
+  admin    SystemAdmin @relation(fields: [admin_id], references: [id])
 }
 
 model RoleTypes {
-  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type   UserRole @default(USER)
-  create Boolean @default(false)
-  read   Boolean @default(false)
-  update Boolean @default(false)
-  delete Boolean @default(false)
-  roles Roles[]
+  create Boolean  @default(false)
+  read   Boolean  @default(false)
+  update Boolean  @default(false)
+  delete Boolean  @default(false)
+  roles  Roles[]
 }
 
 model User {
-  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email String  @unique
-  name  String
-  books UserBooks[]
-  createdAt DateTime @default(now())
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String      @unique
+  name      String
+  books     UserBooks[]
+  createdAt DateTime    @default(now())
 }
 
 model UserBooks {
-  id  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  loan_date DateTime
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  loan_date   DateTime
   return_date DateTime?
-  status  LoanStatus @default(LOANED)
-  user  User    @relation(fields: [user_id], references: [id])
-  user_id String @db.Uuid
-  book Books  @relation(fields: [book_id], references: [id])
-  book_id String @db.Uuid
+  status      LoanStatus @default(LOANED)
+  user        User       @relation(fields: [user_id], references: [id])
+  user_id     String     @db.Uuid
+  book        Books      @relation(fields: [book_id], references: [id])
+  book_id     String     @db.Uuid
 }
 
 model Books {
-  id  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title String
-  author  String?
-  amount Int
-  users UserBooks[]
-  createdAt DateTime @default(now())
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title     String
+  available Boolean     @default(true)
+  author    String?
+  users     UserBooks[]
+  createdAt DateTime    @default(now())
 }
 
 enum LoanStatus {
   LOANED
   RETURNED
+  AVALIABLE
 }
 
 enum UserRole {
