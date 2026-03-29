@@ -2,9 +2,8 @@ import {
   IsUUID,
   IsString,
   IsOptional,
-  IsInt,
-  Min,
   IsDate,
+  IsBoolean,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { PartialType } from "@nestjs/mapped-types";
@@ -20,9 +19,8 @@ export class BookDto {
   @IsString()
   author?: string | null;
 
-  @IsInt()
-  @Min(0)
-  amount: number;
+  @IsBoolean()
+  available: boolean;
 
   @IsDate()
   @Type(() => Date)
@@ -37,9 +35,8 @@ export class CreateBookDto {
   @IsString()
   author?: string;
 
-  @IsInt()
-  @Min(0)
-  amount: number;
+  @IsBoolean()
+  available: boolean;
 }
 
 export class UpdateBookDto extends PartialType(CreateBookDto) {}
