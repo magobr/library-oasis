@@ -6,6 +6,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AdminModule } from "./admin/admin.module";
 import { RbacModule } from "./rbac/rbac.module";
 import { BooksModule } from "./books/books.module";
+import { PatronModule } from './patron/patron.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BooksModule } from "./books/books.module";
     }),
     RbacModule,
     BooksModule,
+    PatronModule,
   ],
   controllers: [AppController],
   providers: [AppService],

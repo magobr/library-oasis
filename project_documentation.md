@@ -63,16 +63,19 @@
 **Módulo responsável por gerenciar livros emprestados:**
 
 - [ ] Testes de integração
-- [ ] Método para adicionar um novo empréstimo
-- [ ] Método para pesquisar um empréstimo
-- [ ] Método para atualizar o status de um empréstimo
-- [ ] Adicionar permissão de leitura e escrita devido
-- [ ] Regra de negócio: Ao atualizar o status de empréstimo, atualizar a disponibilidade do livro
+- [x] Método para adicionar um novo empréstimo
+- [x] Método para pesquisar um empréstimo
+- [x] Método para atualizar o status de um empréstimo
+- [x] Adicionar permissão de leitura e escrita devido
+- [x] Regra de negócio: Ao atualizar o status de empréstimo, atualizar a disponibilidade do livro
+- [x] Regra de negócio: Consultar disponibilidade do livro antes de criar um novo emprestimo
+- [x] Regra de negócio: Se o usuário tiver 5 livros emprestados, não poderá pegar outro livro
 
 ---
 
 ## Melhorias de gerais e atualizações
 
+- [ ] Decorator para permissões (RBAC)
 - [ ] Padronizar nomenclaturas (Arquivos, classes e variaveis em comun)
 - [x] Ajuste na tabela de Livros e no ENUM de status de emprestimo:
   - [x] Remover coluna de contagem de livros
