@@ -57,7 +57,6 @@
 - [x] Método para remover um novo livro do acervo
 - [x] Método para atualizar os livros do acervo
 - [x] Adicionar permissão de leitura e escrita devido
-- [ ] Regra de negócio: No método de adicionar livro, se o livro já existir, adicionar +1 a contagem
 
 ### Módulo de emprestimo de livros
 
@@ -75,10 +74,10 @@
 ## Melhorias de gerais e atualizações
 
 - [ ] Padronizar nomenclaturas (Arquivos, classes e variaveis em comun)
-- [ ] Ajuste na tabela de Livros e no ENUM de status de emprestimo:
-  - [ ] Remover coluna de contagem de livros
-  - [ ] Adicionar coluna de disponibilidade
-  - [ ] Adcininando enum AVALIABLE
+- [x] Ajuste na tabela de Livros e no ENUM de status de emprestimo:
+  - [x] Remover coluna de contagem de livros
+  - [x] Adicionar coluna de disponibilidade
+  - [x] Adcininando enum AVALIABLE
 
 ---
 
