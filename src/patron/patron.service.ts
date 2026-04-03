@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { UUID } from "crypto";
-import { AdminTokenDto } from "src/admin/dto/admin.dto";
-import { BooksService } from "src/books/books.service";
-import { DataBaseService } from "src/database/database.service";
-import { RbacService } from "src/rbac/rbac.service";
+import { AdminTokenDto } from "../admin/dto/admin.dto";
+import { BooksService } from "../books/books.service";
+import { DataBaseService } from "../database/database.service";
+import { RbacService } from "../rbac/rbac.service";
 import { CreatePatronDto, UpdatePatronDto } from "./dto/patron.dto";
 import {
   AddPatronResponseDto,

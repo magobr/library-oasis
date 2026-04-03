@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { DataBaseService } from "src/database/database.service";
+import { DataBaseService } from "../database/database.service";
 import { CreateBookDto, UpdateBookDto } from "./dto/book.dto";
 import {
   AddBookResponseDto,
@@ -7,10 +7,10 @@ import {
   FindAllBooksResponseDto,
   UpdateBookResponseDto,
   RemoveBookResponseDto,
-} from "src/books/dto/book_response.dto";
-import { AdminTokenDto } from "src/admin/dto/admin.dto";
+} from "../books/dto/book_response.dto";
+import { AdminTokenDto } from "../admin/dto/admin.dto";
 import { UUID } from "crypto";
-import { RbacService } from "src/rbac/rbac.service";
+import { RbacService } from "../rbac/rbac.service";
 import { Prisma } from "@prisma/client";
 
 @Injectable()

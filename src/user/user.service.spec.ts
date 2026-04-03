@@ -10,7 +10,6 @@ import { JwtService } from "@nestjs/jwt";
 
 describe("User Service", () => {
   let user_service: UserService;
-  let rbacService: RbacService;
 
   const databaseServiceMock = {
     user: {

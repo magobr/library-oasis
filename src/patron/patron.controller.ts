@@ -8,11 +8,12 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import * as crypto from "crypto";
-import { AdminToken } from "src/admin/admin.decorator";
-import { AdminGuard } from "src/admin/admin.guard";
-import { AdminTokenDto } from "src/admin/dto/admin.dto";
+import { AdminToken } from "../admin/admin.decorator";
+import { AdminGuard } from "../admin/admin.guard";
+import { AdminTokenDto } from "../admin/dto/admin.dto";
 import { CreatePatronDto, UpdatePatronDto } from "./dto/patron.dto";
 import { PatronService } from "./patron.service";
+import { AddPatronResponseDto } from "./dto/patron_response.dto";
 
 @UseGuards(AdminGuard)
 @Controller("patron")
@@ -23,7 +24,7 @@ export class PatronController {
   async addPatron(
     @AdminToken() token: AdminTokenDto,
     @Body() patron: CreatePatronDto,
-  ) {
+  ): Promise<AddPatronResponseDto> {
     return await this.patronService.addPatron(token, patron);
   }
 
