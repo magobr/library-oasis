@@ -9,11 +9,11 @@ import {
   Put,
 } from "@nestjs/common";
 import * as crypto from "crypto";
-import { AdminGuard } from "src/admin/admin.guard";
-import { BooksService } from "src/books/books.service";
-import { CreateBookDto, UpdateBookDto } from "src/books/dto/book.dto";
-import { AdminToken } from "src/admin/admin.decorator";
-import { AdminTokenDto } from "src/admin/dto/admin.dto";
+import { AdminGuard } from "../admin/admin.guard";
+import { BooksService } from "../books/books.service";
+import { CreateBookDto, UpdateBookDto } from "../books/dto/book.dto";
+import { AdminToken } from "../admin/admin.decorator";
+import { AdminTokenDto } from "../admin/dto/admin.dto";
 import {
   AddBookResponseDto,
   FindAllBooksResponseDto,

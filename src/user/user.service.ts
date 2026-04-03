@@ -79,6 +79,8 @@ export class UserService {
         throw new HttpException("Email already in use", HttpStatus.CONFLICT);
       }
 
+      if (e instanceof HttpException) throw e;
+
       throw new HttpException(
         "Internal server error",
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -116,6 +118,8 @@ export class UserService {
         throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
+      if (e instanceof HttpException) throw e;
+
       throw new HttpException(
         "Internal server error",
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -149,6 +153,8 @@ export class UserService {
       ) {
         throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
+
+      if (e instanceof HttpException) throw e;
 
       throw new HttpException(
         "Internal server error",

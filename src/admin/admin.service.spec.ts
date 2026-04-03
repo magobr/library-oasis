@@ -9,6 +9,7 @@ import * as bcrypt from "bcrypt";
 import { Prisma } from "@prisma/client";
 import { UpdateAdminDto } from "./dto/update-admin.dto";
 import { CreateAdminDto } from "./dto/create-admin.dto";
+import { AdminTokenDto } from "./dto/admin.dto";
 
 jest.mock("bcrypt");
 
@@ -28,16 +29,32 @@ describe("AdminService", () => {
   const rbacServiceMock = {
     insertInnitialRoles: jest.fn(),
     deleteRoles: jest.fn(),
+    isReadRole: jest.fn(),
+    isCreateRole: jest.fn(),
+    isDeleteRole: jest.fn(),
+    isUpdateRole: jest.fn(),
   };
 
   const jwtServiceMock = {
     signAsync: jest.fn(),
   };
 
+  const admin_token: AdminTokenDto = {
+    id: "admin-id",
+    email: "admin@email.com",
+    name: "Admin",
+    roleType: {
+      id: "roleType-id",
+    },
+    iat: 1234567890,
+    exp: 1234567890,
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
+        JwtService,
         { provide: DataBaseService, useValue: databaseServiceMock },
         { provide: RbacService, useValue: rbacServiceMock },
         { provide: JwtService, useValue: jwtServiceMock },
@@ -50,62 +67,85 @@ describe("AdminService", () => {
   });
 
   describe("find", () => {
-    it("deve retornar admin", async () => {
-      const adminMock = {
-        id: "1",
-        email: "test@test.com",
-        name: "Test",
-        createdAt: new Date(),
-      };
+    const adminMock = {
+      id: "1",
+      email: "test@test.com",
+      name: "Test",
+      createdAt: new Date(),
+    };
 
+    it("deve retornar admin", async () => {
+      rbacServiceMock.isReadRole.mockResolvedValue(true);
       databaseServiceMock.systemAdmin.findUnique.mockResolvedValue(adminMock);
 
-      const result = await service.find("1" as crypto.UUID);
+      const result = await service.find(admin_token, "1" as crypto.UUID);
 
       expect(result).toEqual(adminMock);
     });
 
     it("deve lançar erro se não encontrar", async () => {
+      rbacServiceMock.isReadRole.mockResolvedValue(true);
       databaseServiceMock.systemAdmin.findUnique.mockResolvedValue(null);
 
-      await expect(service.find("1" as crypto.UUID)).rejects.toThrow(
+      await expect(
+        service.find(admin_token, "1" as crypto.UUID),
+      ).rejects.toThrow(
         new HttpException("Admin not found", HttpStatus.NOT_FOUND),
+      );
+    });
+
+    it("Deve lançar erro de permissão de leitura", async () => {
+      rbacServiceMock.isReadRole.mockResolvedValue(false);
+
+      await expect(
+        service.find(admin_token, "1" as crypto.UUID),
+      ).rejects.toThrow(
+        new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED),
+      );
+    });
+
+    it("Deve lançar erro genérico", async () => {
+      rbacServiceMock.isReadRole.mockResolvedValue(true);
+      databaseServiceMock.systemAdmin.findUnique.mockRejectedValue(new Error());
+
+      await expect(
+        service.find(admin_token, "1" as crypto.UUID),
+      ).rejects.toThrow(
+        new HttpException(
+          "Internal Server Error",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        ),
       );
     });
   });
 
   describe("create", () => {
+    const data_create_admin: CreateAdminDto = {
+      email: "test@test.com",
+      name: "Test",
+      password: "123",
+    };
     it("deve criar admin com sucesso", async () => {
-      const dto = {
-        email: "test@test.com",
-        name: "Test",
-        password: "123",
-      };
-
-      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed");
-
-      databaseServiceMock.$transaction.mockImplementation(
-        async (cb: () => Promise<unknown>) => {
-          return cb();
-        },
-      );
+      rbacServiceMock.isCreateRole.mockResolvedValue(true);
 
       databaseServiceMock.systemAdmin.create.mockResolvedValue({
         id: "1",
-        email: dto.email,
-        name: dto.name,
+        email: data_create_admin.email,
+        name: data_create_admin.name,
         createdAt: new Date(),
       });
 
       rbacServiceMock.insertInnitialRoles.mockResolvedValue(true);
 
-      const result = await service.create(dto as CreateAdminDto);
+      const result = await service.create(admin_token, data_create_admin);
 
-      expect(result.email).toBe(dto.email);
+      expect(result.email).toBe(data_create_admin.email);
       expect(rbacServiceMock.insertInnitialRoles).toHaveBeenCalled();
     });
 
     it("deve lançar erro se email já existir (P2002)", async () => {
+      rbacServiceMock.isCreateRole.mockResolvedValue(true);
+
       const error = new Prisma.PrismaClientKnownRequestError(
         "Unique constraint",
         {
@@ -117,11 +157,7 @@ describe("AdminService", () => {
       databaseServiceMock.systemAdmin.create.mockRejectedValue(error);
 
       await expect(
-        service.create({
-          email: "teste@email.com",
-          name: "Teste",
-          password: "123456",
-        } as CreateAdminDto),
+        service.create(admin_token, data_create_admin),
       ).rejects.toMatchObject({
         response: "Email already in use",
         status: 409,
@@ -129,6 +165,8 @@ describe("AdminService", () => {
     });
 
     it("deve lançar erro se roles falharem", async () => {
+      rbacServiceMock.isCreateRole.mockResolvedValue(true);
+
       (bcrypt.hash as jest.Mock).mockResolvedValue("hashed");
 
       databaseServiceMock.$transaction.mockImplementation(
@@ -143,14 +181,34 @@ describe("AdminService", () => {
 
       rbacServiceMock.insertInnitialRoles.mockResolvedValue(null);
 
-      await expect(service.create({} as CreateAdminDto)).rejects.toThrow(
-        "Error assigning roles to admin",
+      await expect(
+        service.create(admin_token, data_create_admin),
+      ).rejects.toThrow("Error assigning roles to admin");
+    });
+
+    it("Deve lançar erro de permissão de criar admin", async () => {
+      rbacServiceMock.isCreateRole.mockResolvedValue(false);
+
+      await expect(
+        service.create(admin_token, data_create_admin),
+      ).rejects.toThrow(
+        new HttpException("Unauthorized", HttpStatus.UNAUTHORIZED),
       );
+    });
+
+    it("deve lançar erro genérico", async () => {
+      rbacServiceMock.isCreateRole.mockResolvedValue(true);
+      databaseServiceMock.systemAdmin.create.mockRejectedValue(new Error());
+
+      await expect(
+        service.create(admin_token, data_create_admin),
+      ).rejects.toThrow("Internal Server Error");
     });
   });
 
   describe("update", () => {
     it("deve atualizar admin", async () => {
+      rbacServiceMock.isUpdateRole.mockResolvedValue(true);
       databaseServiceMock.systemAdmin.update.mockResolvedValue({
         id: "1",
         email: "new@test.com",
@@ -158,7 +216,7 @@ describe("AdminService", () => {
         createdAt: new Date(),
       });
 
-      const result = await service.update("1" as crypto.UUID, {
+      const result = await service.update(admin_token, "1" as crypto.UUID, {
         email: "new@test.com",
         name: "New",
       });
@@ -167,6 +225,7 @@ describe("AdminService", () => {
     });
 
     it("deve atualizar senha se enviada", async () => {
+      rbacServiceMock.isUpdateRole.mockResolvedValue(true);
       (bcrypt.hash as jest.Mock).mockResolvedValue("hashed");
 
       databaseServiceMock.systemAdmin.update.mockResolvedValue({
@@ -177,6 +236,7 @@ describe("AdminService", () => {
       });
 
       await service.update(
+        admin_token,
         "1" as crypto.UUID,
         {
           password: "123",
@@ -187,6 +247,7 @@ describe("AdminService", () => {
     });
 
     it("deve lançar erro P2025", async () => {
+      rbacServiceMock.isUpdateRole.mockResolvedValue(true);
       const error = new Prisma.PrismaClientKnownRequestError(
         "Unique constraint",
         {
@@ -198,25 +259,40 @@ describe("AdminService", () => {
       databaseServiceMock.systemAdmin.update.mockRejectedValue(error);
 
       await expect(
-        service.update("1" as crypto.UUID, {} as UpdateAdminDto),
+        service.update(admin_token, "1" as crypto.UUID, {} as UpdateAdminDto),
       ).rejects.toThrow("User not found");
+    });
+
+    it("deve lançar erro de permissão para atualizar usuário", async () => {
+      rbacServiceMock.isUpdateRole.mockResolvedValue(false);
+
+      await expect(
+        service.update(admin_token, "1" as crypto.UUID, {} as UpdateAdminDto),
+      ).rejects.toThrow("Unauthorized");
+    });
+
+    it("deve lançar erro genérico", async () => {
+      rbacServiceMock.isUpdateRole.mockResolvedValue(true);
+      databaseServiceMock.systemAdmin.update.mockRejectedValue(new Error());
+
+      await expect(
+        service.update(admin_token, "1" as crypto.UUID, {} as UpdateAdminDto),
+      ).rejects.toThrow("Internal Server Error");
     });
   });
 
-  // =========================
-  // DELETE
-  // =========================
   describe("delete", () => {
     it("deve deletar admin", async () => {
-      rbacServiceMock.deleteRoles.mockResolvedValue(true);
+      rbacServiceMock.isDeleteRole.mockResolvedValue(true);
       databaseServiceMock.systemAdmin.delete.mockResolvedValue(true);
 
-      const result = await service.delete("1" as crypto.UUID);
+      const result = await service.delete(admin_token, "1" as crypto.UUID);
 
       expect(result.message).toBe("Admin deleted successfully");
     });
 
     it("deve lançar erro P2025", async () => {
+      rbacServiceMock.isDeleteRole.mockResolvedValue(true);
       const error = new Prisma.PrismaClientKnownRequestError(
         "Unique constraint",
         {
@@ -227,9 +303,26 @@ describe("AdminService", () => {
 
       databaseServiceMock.systemAdmin.delete.mockRejectedValue(error);
 
-      await expect(service.delete("1" as crypto.UUID)).rejects.toThrow(
-        "User not found",
-      );
+      await expect(
+        service.delete(admin_token, "1" as crypto.UUID),
+      ).rejects.toThrow("User not found");
+    });
+
+    it("deve lançar erro de permissão", async () => {
+      rbacServiceMock.isDeleteRole.mockResolvedValue(false);
+
+      await expect(
+        service.delete(admin_token, "1" as crypto.UUID),
+      ).rejects.toThrow("Unauthorized");
+    });
+
+    it("deve lançar erro genérico", async () => {
+      rbacServiceMock.isDeleteRole.mockResolvedValue(true);
+      databaseServiceMock.systemAdmin.delete.mockRejectedValue(new Error());
+
+      await expect(
+        service.delete(admin_token, "1" as crypto.UUID),
+      ).rejects.toThrow("Internal Server Error");
     });
   });
 

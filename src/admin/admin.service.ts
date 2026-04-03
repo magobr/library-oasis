@@ -47,14 +47,12 @@ export class AdminService {
         createdAt: admin.createdAt,
       };
     } catch (e) {
-      if (e instanceof HttpException) {
-        throw e;
-      } else {
-        throw new HttpException(
-          "Internal Server Error",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      if (e instanceof HttpException) throw e;
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -106,14 +104,12 @@ export class AdminService {
         throw new HttpException("Email already in use", HttpStatus.CONFLICT);
       }
 
-      if (e instanceof HttpException) {
-        throw e;
-      } else {
-        throw new HttpException(
-          "Internal Server Error",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      if (e instanceof HttpException) throw e;
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -177,14 +173,12 @@ export class AdminService {
         throw new HttpException("Email already in use", HttpStatus.CONFLICT);
       }
 
-      if (e instanceof HttpException) {
-        throw e;
-      } else {
-        throw new HttpException(
-          "Internal Server Error",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      if (e instanceof HttpException) throw e;
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -219,14 +213,12 @@ export class AdminService {
         throw new HttpException("User not found", HttpStatus.NOT_FOUND);
       }
 
-      if (e instanceof HttpException) {
-        throw e;
-      } else {
-        throw new HttpException(
-          "Internal Server Error",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      if (e instanceof HttpException) throw e;
+
+      throw new HttpException(
+        "Internal Server Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

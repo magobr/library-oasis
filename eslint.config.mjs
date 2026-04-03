@@ -1,10 +1,10 @@
-// @ts-check
+
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default [
   {
     ignores: ['eslint.config.mjs'],
   },
@@ -19,8 +19,13 @@ export default tseslint.config(
       },
       sourceType: 'commonjs',
       parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        projectService: [
+          {
+            allowDefaultProject: ['eslint.config.mjs'],
+            tsconfigRootDir: import.meta.dirname,
+            project: './tsconfig.json',
+          },
+        ],
       },
     },
   },
@@ -33,4 +38,4 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
-);
+];
