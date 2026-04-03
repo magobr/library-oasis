@@ -55,7 +55,7 @@ model UserBooks {
 model Books {
   id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title     String
-  avaliable Boolean     @default(true) //ajuste nome para avaliable
+  avaliable Boolean     @default(true)
   author    String?
   users     UserBooks[]
   createdAt DateTime    @default(now())

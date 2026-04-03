@@ -4,9 +4,9 @@ import {
   IsOptional,
   IsDate,
   IsBoolean,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { PartialType } from '@nestjs/mapped-types';
+} from "class-validator";
+import { Type } from "class-transformer";
+import { PartialType } from "@nestjs/mapped-types";
 
 export class BookDto {
   @IsUUID()
