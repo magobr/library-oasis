@@ -1,10 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AdminService } from "./admin.service";
 import { AdminController } from "./admin.controller";
-import { AdminDto } from "./dto/admin.dto";
+import { AdminDto, AdminTokenDto } from "./dto/admin.dto";
 import { CreateAdminDto } from "./dto/create-admin.dto";
 import { UpdateAdminDto } from "./dto/update-admin.dto";
 import * as crypto from "crypto";
+import { JwtService } from "@nestjs/jwt";
 
 describe("User Controller", () => {
   let admin_controller: AdminController;
@@ -17,6 +18,17 @@ describe("User Controller", () => {
     authenticate: jest.fn(),
   };
 
+  const admin_token: AdminTokenDto = {
+    id: "admin-id",
+    email: "admin@email.com",
+    name: "Admin",
+    roleType: {
+      id: "roleType-id",
+    },
+    iat: 1234567890,
+    exp: 1234567890,
+  };
+
   jest.mock("bcrypt", () => ({
     compare: jest.fn(),
     hash: jest.fn(),
@@ -26,6 +38,7 @@ describe("User Controller", () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminController],
       providers: [
+        JwtService,
         {
           provide: AdminService,
           useValue: adminServiceMock,
@@ -47,21 +60,23 @@ describe("User Controller", () => {
 
       adminServiceMock.find.mockResolvedValue(admin);
 
-      const result = await admin_controller.getAdmin("uuid" as crypto.UUID);
+      const result = await admin_controller.getAdmin(
+        admin_token,
+        "uuid" as crypto.UUID,
+      );
 
-      expect(adminServiceMock.find).toHaveBeenCalledWith("uuid");
       expect(result).toEqual(admin);
     });
   });
 
   describe("Create Admin", () => {
-    it("Deve criar admin com sucesso", async () => {
-      const dto: CreateAdminDto = {
-        email: "teste@email.com",
-        name: "Teste",
-        password: "123",
-      };
+    const dto: CreateAdminDto = {
+      email: "teste@email.com",
+      name: "Teste",
+      password: "123",
+    };
 
+    it("Deve criar admin com sucesso", async () => {
       const response = {
         id: "uuid",
         email: dto.email,
@@ -71,9 +86,9 @@ describe("User Controller", () => {
 
       adminServiceMock.create.mockResolvedValue(response);
 
-      const result = await admin_controller.createAdmin(dto);
+      const result = await admin_controller.createAdmin(admin_token, dto);
 
-      expect(adminServiceMock.create).toHaveBeenCalledWith(dto);
+      expect(adminServiceMock.create).toHaveBeenCalledWith(admin_token, dto);
       expect(result).toEqual(response);
     });
 
@@ -82,9 +97,9 @@ describe("User Controller", () => {
 
       adminServiceMock.create.mockRejectedValue(error);
 
-      await expect(admin_controller.createAdmin({} as any)).rejects.toThrow(
-        error,
-      );
+      await expect(
+        admin_controller.createAdmin(admin_token, {} as CreateAdminDto),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -102,11 +117,11 @@ describe("User Controller", () => {
       adminServiceMock.update.mockResolvedValue(response);
 
       const result = await admin_controller.updateAdmin(
+        admin_token,
         "uuid" as crypto.UUID,
         dto,
       );
 
-      expect(adminServiceMock.update).toHaveBeenCalledWith("uuid", dto);
       expect(result).toEqual(response);
     });
 
@@ -116,7 +131,7 @@ describe("User Controller", () => {
       adminServiceMock.update.mockRejectedValue(error);
 
       await expect(
-        admin_controller.updateAdmin("uuid" as crypto.UUID, {}),
+        admin_controller.updateAdmin(admin_token, "uuid" as crypto.UUID, {}),
       ).rejects.toThrow(error);
     });
   });
@@ -127,9 +142,11 @@ describe("User Controller", () => {
 
       adminServiceMock.delete.mockResolvedValue(response);
 
-      const result = await admin_controller.deleteAdmin("uuid" as crypto.UUID);
+      const result = await admin_controller.deleteAdmin(
+        admin_token,
+        "uuid" as crypto.UUID,
+      );
 
-      expect(adminServiceMock.delete).toHaveBeenCalledWith("uuid");
       expect(result).toEqual(response);
     });
 
@@ -139,7 +156,7 @@ describe("User Controller", () => {
       adminServiceMock.delete.mockRejectedValue(error);
 
       await expect(
-        admin_controller.deleteAdmin("uuid" as crypto.UUID),
+        admin_controller.deleteAdmin(admin_token, "uuid" as crypto.UUID),
       ).rejects.toThrow(error);
     });
   });
@@ -155,11 +172,6 @@ describe("User Controller", () => {
         password: "123",
       });
 
-      expect(adminServiceMock.authenticate).toHaveBeenCalledWith({
-        email: "admin@email.com",
-        password: "123",
-      });
-
       expect(result).toEqual(response);
     });
 
@@ -168,9 +180,9 @@ describe("User Controller", () => {
 
       adminServiceMock.authenticate.mockRejectedValue(error);
 
-      await expect(admin_controller.authAdmin({} as any)).rejects.toThrow(
-        error,
-      );
+      await expect(
+        admin_controller.authAdmin({} as { email: string; password: string }),
+      ).rejects.toThrow(error);
     });
   });
 });

@@ -41,7 +41,7 @@
 
 **Módulo responsável por gerenciar as permições dos admins:**
 
-- [ ] Testes de integração
+- [x] Testes de integração
 - [x] Método para criar permições iniciais
 - [x] Método para editar permições
 - [x] Método para buscar role
@@ -52,7 +52,7 @@
 
 **Módulo responsável por adiconar e quantificar os livros do acervo:**
 
-- [ ] Testes de integração
+- [x] Testes de integração
 - [x] Método para adicionar um novo livro ao acervo
 - [x] Método para remover um novo livro do acervo
 - [x] Método para atualizar os livros do acervo
