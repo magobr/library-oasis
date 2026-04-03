@@ -5,6 +5,7 @@ import { UserController } from "./user.controller";
 import { UserService } from "./user.service";
 import { JwtService } from "@nestjs/jwt";
 import { UUID } from "node:crypto";
+import { AdminTokenDto } from "src/admin/dto/admin.dto";
 
 describe("User controller", () => {
   let user_controller: UserController;
@@ -14,6 +15,17 @@ describe("User controller", () => {
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+  };
+
+  const admin_token: AdminTokenDto = {
+    id: "admin-id",
+    email: "admin@email.com",
+    name: "Admin",
+    roleType: {
+      id: "roleType-id",
+    },
+    iat: 1234567890,
+    exp: 1234567890,
   };
 
   beforeEach(async () => {
@@ -44,6 +56,7 @@ describe("User controller", () => {
       jest.spyOn(user_controller, "getUser").mockResolvedValue(user);
 
       const result = await user_controller.getUser(
+        admin_token,
         "3caeba63-22ef-482d-96a9-e37b940b5177",
       );
 
@@ -58,7 +71,7 @@ describe("User controller", () => {
 
       userServiceMock.find.mockRejectedValue(exception);
 
-      const result = user_controller.getUser("uui" as UUID);
+      const result = user_controller.getUser(admin_token, "uui" as UUID);
 
       await expect(result).rejects.toThrow(exception);
     });
@@ -75,7 +88,7 @@ describe("User controller", () => {
 
       userServiceMock.create.mockResolvedValue(user);
 
-      const result = await user_controller.createUser({
+      const result = await user_controller.createUser(admin_token, {
         email: "thiago@email.com",
         name: "Thiago Novaes",
       });
@@ -91,7 +104,7 @@ describe("User controller", () => {
 
       userServiceMock.create.mockRejectedValue(exception);
 
-      const result = user_controller.createUser({
+      const result = user_controller.createUser(admin_token, {
         email: "thiago@email.com",
         name: "Thiago Novaes",
       });
@@ -107,7 +120,7 @@ describe("User controller", () => {
 
       userServiceMock.create.mockRejectedValue(exception);
 
-      const result = user_controller.createUser({
+      const result = user_controller.createUser(admin_token, {
         email: "thiago@email.com",
         name: "Thiago Novaes",
       });
@@ -127,6 +140,7 @@ describe("User controller", () => {
 
       userServiceMock.update.mockResolvedValue(user);
       const result = await user_controller.updateUser(
+        admin_token,
         "3caeba63-22ef-482d-96a9-e37b940b5177",
         {
           name: "Teste Atualizado",
@@ -145,9 +159,13 @@ describe("User controller", () => {
       userServiceMock.update.mockRejectedValue(exception);
 
       await expect(
-        user_controller.updateUser("3caeba63-22ef-482d-96a9-e37b940b5177", {
-          name: "Teste Atualizado",
-        }),
+        user_controller.updateUser(
+          admin_token,
+          "3caeba63-22ef-482d-96a9-e37b940b5177",
+          {
+            name: "Teste Atualizado",
+          },
+        ),
       ).rejects.toThrow(exception);
     });
 
@@ -160,9 +178,13 @@ describe("User controller", () => {
       userServiceMock.update.mockRejectedValue(exception);
 
       await expect(
-        user_controller.updateUser("3caeba63-22ef-482d-96a9-e37b940b5177", {
-          name: "Teste Atualizado",
-        }),
+        user_controller.updateUser(
+          admin_token,
+          "3caeba63-22ef-482d-96a9-e37b940b5177",
+          {
+            name: "Teste Atualizado",
+          },
+        ),
       ).rejects.toThrow(exception);
     });
   });
@@ -173,6 +195,7 @@ describe("User controller", () => {
 
       userServiceMock.delete.mockReturnValue(returnMessage);
       const result = await user_controller.deleteUser(
+        admin_token,
         "3caeba63-22ef-482d-96a9-e37b940b5177",
       );
 
@@ -188,7 +211,10 @@ describe("User controller", () => {
       userServiceMock.delete.mockRejectedValue(returnMessage);
 
       await expect(
-        user_controller.deleteUser("3caeba63-22ef-482d-96a9-e37b940b5177"),
+        user_controller.deleteUser(
+          admin_token,
+          "3caeba63-22ef-482d-96a9-e37b940b5177",
+        ),
       ).rejects.toThrow(returnMessage);
     });
 
@@ -201,7 +227,10 @@ describe("User controller", () => {
       userServiceMock.delete.mockRejectedValue(returnMessage);
 
       await expect(
-        user_controller.deleteUser("3caeba63-22ef-482d-96a9-e37b940b5177"),
+        user_controller.deleteUser(
+          admin_token,
+          "3caeba63-22ef-482d-96a9-e37b940b5177",
+        ),
       ).rejects.toThrow(returnMessage);
     });
   });

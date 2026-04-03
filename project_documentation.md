@@ -62,7 +62,7 @@
 
 **Módulo responsável por gerenciar livros emprestados:**
 
-- [ ] Testes de integração
+- [x] Testes de integração
 - [x] Método para adicionar um novo empréstimo
 - [x] Método para pesquisar um empréstimo
 - [x] Método para atualizar o status de um empréstimo
