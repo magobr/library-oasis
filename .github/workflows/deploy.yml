@@ -3,7 +3,7 @@ name: CI/CD Docker Deploy
 on:
   push:
     branches:
-      - producao
+      - release
 
 env:
   REGISTRY: ghcr.io
