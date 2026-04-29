@@ -15,7 +15,6 @@ import { UpdateAdminDto } from "./dto/update-admin.dto";
 import { AdminGuard } from "./admin.guard";
 import { UseGuards } from "@nestjs/common";
 import { AdminTokenDto } from "./dto/admin.dto";
-import { AuthAdminDto } from "./dto/auth-admin.dto";
 
 @Controller("admin")
 export class AdminController {
