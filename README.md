@@ -36,14 +36,14 @@ O objetivo deste projeto é aplicar **boas práticas de desenvolvimento**, com f
 
 Abaixo estão exemplos de cURL para cada endpoint do projeto, com placeholders e observações sobre o que usar em cada requisição. Substitua `HOST`, `TOKEN`, `ADMIN_ID`, `USER_ID`, `BOOK_ID`, `PATRON_ID` pelos valores reais do seu ambiente.
 
-### Observações gerais
+**Observações gerais**
 - HOST exemplo: `http://localhost:3000`
 - Sempre que requerido, passe header: `Authorization: Bearer <TOKEN>`
 - Os tokens são obtidos em `POST /admin/auth`
 - Content-Type JSON: `-H "Content-Type: application/json"`
 - Campos esperados por DTOs estão descritos nos comentários abaixo de cada curl.
 
-**Autenticação Admin — POST /admin/auth**
+### Autenticação Admin — POST /admin/auth
 
 ```/dev/null/ENDPOINTS_CURLS.md#L9-20
 curl -i -X POST "http://HOST/admin/auth" \
@@ -54,7 +54,7 @@ curl -i -X POST "http://HOST/admin/auth" \
 - Sucesso: 200 OK -> `{ "access_token": "<JWT>" }`
 - Erros: 401 Unauthorized (credenciais inválidas), 403 se sem roles.
 
-**Admin — GET / POST / PUT / DELETE**
+### Admin — GET / POST / PUT / DELETE
 
 - GET /admin/:id
 ```/dev/null/ENDPOINTS_CURLS.md#L21-30
@@ -95,7 +95,7 @@ curl -i -X DELETE "http://HOST/admin/ADMIN_ID" \
 - Resposta: `{ "message": "Admin deleted successfully" }`
 - Erros: 401, 403, 404
 
-**Users — GET / POST / PUT / DELETE (rota base `/users`)**
+### Users — GET / POST / PUT / DELETE (rota base `/users`)
 
 - GET /users/:id
 ```/dev/null/ENDPOINTS_CURLS.md#L69-78
@@ -133,7 +133,7 @@ curl -i -X DELETE "http://HOST/users/USER_ID" \
 - Resposta: `{ message: string }`
 - Erros: 401, 403, 404
 
-**Books — base `/books`**
+### Books — base `/books`
 
 - POST /books (criar livro)
 ```/dev/null/ENDPOINTS_CURLS.md#L113-126
@@ -184,7 +184,7 @@ curl -i -X DELETE "http://HOST/books/BOOK_ID" \
 - Requer `isDeleteRole`.
 - Erros: 401, 403, 404
 
-**Patron (empréstimos) — base `/patron`**
+### Patron (empréstimos) — base `/patron`
 
 - POST /patron (criar empréstimo)
 ```/dev/null/ENDPOINTS_CURLS.md#L169-184
@@ -237,7 +237,7 @@ curl -i -X PUT "http://HOST/patron/PATRON_ID" \
   - Atualiza somente empréstimos com `status: LOANED` e `return_date: null`.
 - Erros: 403, 404 (empréstimo não encontrado), 500
 
-**Resumo de códigos de erro mais comuns**
+### Resumo de códigos de erro mais comuns
 - 200 / 201 — sucesso
 - 400 — validação / lógica de negócio (ex.: livro já emprestado)
 - 401 — token ausente/ inválido

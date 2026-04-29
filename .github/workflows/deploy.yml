@@ -3,7 +3,7 @@ name: CI/CD Docker Deploy
 on:
   push:
     branches:
-      - producao
+      - release
 
 env:
   REGISTRY: ghcr.io
@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
-        run: npm run lint
+      - name: Generate prisma client
+        run: npm run db:generate
 
       - name: Run tests
         run: npm run test
